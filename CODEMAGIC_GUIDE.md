@@ -10,113 +10,101 @@
 
 ## 🚀 第一步：在 Codemagic 创建应用
 
-1. 访问 https://codemagic.io/register 注册账号
-2. 使用 GitHub 登录（推荐）
-3. 点击 **Add Application**
-4. 选择 **shunshi-app** 仓库
-5. 选择 **Flutter** 项目类型
-6. 点击 **Finish**
+1. 访问 https://codemagic.io/register 注册账号（用 GitHub 登录最快）
+2. 点击 **Add Application**
+3. 选择 **shunshi-app** 仓库
+4. 选择 **Flutter** 项目类型
+5. 点击 **Finish**
 
 ---
 
-## 📋 第二步：配置 iOS 构建（需要 Apple 开发者账号）
+## 🤖 第二步：配置 Android 构建（必须先做）
 
-### 2.1 在 Apple Developer Portal 创建 App
-1. 访问 https://developer.apple.com
-2. 进入 Certificates, Identifiers & Profiles
-3. 点击 + 创建新的 **App ID**（com.shunshi.app）
-4. 创建 **Provisioning Profile**（App Store 类型）
+Android 构建需要上传签名密钥。在 Codemagic 进入 App Settings：
 
-### 2.2 在 Codemagic 配置签名
-1. 进入 App Settings → **iOS Code Signing**
-2. 上传你的 **Distribution Certificate** (.cer)
-3. 上传 **Provisioning Profile** (.mobileprovision)
-4. 或者关联 **App Store Connect API Key**（推荐）
-
-### 2.3 配置 App Store Connect API Key（推荐）
-1. 在 App Store Connect 创建 API Key（用户访问 → 密钥）
-2. 在 Codemagic → **Team Integrations** → 添加 App Store Connect
-3. 授权后自动获取签名文件
-
----
-
-## 🤖 第三步：配置 Android 构建
-
-### 3.1 在 Codemagic 上传签名密钥
-1. 进入 App Settings → **Android Code Signing**
-2. 上传 `shunshi-release.jks` 文件
-3. 填入以下信息：
-   - **Keystore password**: （需要查 Android build.gradle.kts 或 key.properties）
+### 2.1 上传签名密钥
+1. 进入 **Android Code Signing**
+2. 上传文件：`/opt/shunshi/keystore/shunshi-release.jks`
+3. 填入信息：
+   - **Keystore password**: `shunshi2024`
    - **Key alias**: `shunshi`
-   - **Key password**: （同 keystore password）
+   - **Key password**: `shunshi2024`
 
-### 3.2 查找 Android 签名信息
-在你的 Mac 上查找 `android/key.properties` 或 `android/app/build.gradle.kts`
-
----
-
-## ⚙️ 第四步：配置环境变量（如需要）
-
-在 Codemagic → App Settings → **Environment Variables** 添加：
-
-```bash
-# iOS
-APPLE_ID=your-apple-id@email.com
-APP_SPECIFIC_PASSWORD=your-app-specific-password
-
-# Android（如果需要）
-ANDROID_SDK_ROOT=/Users/builder/Android/SDK
-```
+### 2.2 触发 Android 构建
+1. 点击 **Start new build**
+2. 选择 **android-workflow**
+3. 等待构建完成
+4. 下载 APK: `build/app/outputs/flutter-apk/app-release.apk`
 
 ---
 
-## ▶️ 第五步：触发构建
+## 🍎 第三步：配置 iOS 构建
 
-### iOS 构建
-1. 在 Codemagic 点击 **Start new build**
+### 3.1 需要的材料
+- Apple 开发者账号（$99/年）
+- Mac 电脑（用于创建证书）或通过 Codemagic 自动签名
+
+### 3.2 自动签名（推荐）
+1. 在 App Store Connect 创建 App ID: `com.shunshi.app`
+2. 在 Codemagic → **iOS Code Signing**
+3. 选择 **App Store Connect API Key**
+4. 关联你的 App Store Connect 账号
+
+### 3.3 触发 iOS 构建
+1. 点击 **Start new build**
 2. 选择 **ios-workflow**
-3. 选择构建机器（Mac Mini 或 Mac Pro）
-4. 点击 **Start build**
-
-### Android 构建
-1. 选择 **android-workflow**
-2. 点击 **Start build**
+3. 选择 Mac Mini (arm64) 构建机器
+4. 等待约 15-20 分钟
+5. 下载 IPA: `build/ios/ipa/*.ipa`
 
 ---
 
-## 📦 构建产物
+## ⚙️ 第四步：发布 App
 
-- **iOS**: `build/ios/ipa/*.ipa`（可在 TestFlight / App Store 发布）
-- **Android**: `build/app/outputs/flutter-apk/*.apk`（可在 Google Play 发布）
+### Android - Google Play
+1. 创建 Google Play 开发者账号
+2. 上传签名后的 APK/AAB
+3. 填写应用信息并提交审核
+
+### iOS - App Store
+1. 创建 App Store Connect 应用
+2. 在 Codemagic 构建完成后自动上传
+3. 或手动通过 Transporter 上传 IPA
+4. 填写应用信息并提交审核
 
 ---
 
-## 🔧 工作流配置
+## 📋 构建产物位置
 
-`codemagic.yaml` 已在仓库中，包含：
-- `ios-workflow`: iOS App Store 构建
-- `android-workflow`: Android release 构建
-
-如需调整，在 GitHub 修改 `codemagic.yaml` 后重新构建即可。
+- **Android APK**: `build/app/outputs/flutter-apk/app-release.apk`
+- **Android AAB**: `build/app/outputs/flutter-apk/app-release.aab`
+- **iOS IPA**: `build/ios/ipa/*.ipa`
 
 ---
 
 ## ❓ 常见问题
 
-**Q: iOS 构建失败提示"no pods installed"**
-A: 在 Codemagic 的 iOS workflow 中添加：
-```yaml
-- name: Install CocoaPods
-  script: |
-    cd ios && pod install
-```
+**Q: Android keystore 找不到或密码不对？**
+A: Keystore 位置：`/opt/shunshi/keystore/shunshi-release.jks`
+   密码：shunshi2024
 
-**Q: Android 构建失败**
-A: 检查签名密钥信息是否正确
+**Q: iOS 构建失败 "No profiles found"?**
+A: 需要在 Apple Developer Portal 创建 App ID 和 Provisioning Profile，然后在 Codemagic 配置签名
 
-**Q: 如何构建 Ad Hoc 测试版？**
-A: 修改 `codemagic.yaml` 中 iOS workflow 的 `--type` 为 `ad-hoc`
+**Q: 如何测试分发？**
+A: Android 可以直接安装 APK；iOS 需要 Ad Hoc 或 TestFlight
 
 ---
 
-需要帮助可以截图发给我！
+## 📁 仓库文件结构
+
+```
+shunshi-app/
+├── ios/              # iOS 项目
+├── android/         # Android 项目
+├── lib/              # Flutter Dart 代码
+├── web/              # Web 版本
+├── pubspec.yaml      # Flutter 依赖
+├── codemagic.yaml    # CI/CD 配置
+└── CODEMAGIC_GUIDE.md
+```
