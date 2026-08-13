@@ -15,6 +15,8 @@ def read(relative: str) -> str:
 errors: list[str] = []
 app_config = read("lib/core/config/app_config.dart")
 android = read("android/app/build.gradle.kts")
+android_settings = read("android/settings.gradle.kts")
+gradle_wrapper = read("android/gradle/wrapper/gradle-wrapper.properties")
 manifest = read("android/app/src/main/AndroidManifest.xml")
 info = read("ios/Runner/Info.plist")
 router_files = "\n".join(
@@ -31,6 +33,10 @@ if 'signingConfigs.getByName("debug")' in android and "ALLOW_DEBUG_RELEASE_SIGNI
     errors.append("Android release silently uses the debug signer")
 if "key.properties" not in android:
     errors.append("Android release keystore contract is missing")
+if 'com.android.application") version "8.9.2"' not in android_settings:
+    errors.append("Android Gradle plugin must support the release AAR metadata")
+if "gradle-8.11.1-all.zip" not in gradle_wrapper:
+    errors.append("Gradle wrapper is incompatible with the Android Gradle plugin")
 for variable in (
     "CM_KEYSTORE_PATH",
     "CM_KEYSTORE_PASSWORD",
