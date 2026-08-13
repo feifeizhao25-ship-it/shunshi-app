@@ -91,10 +91,10 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final client = ApiClient();
-      final response = await client.post('/api/v1/auth/sms/verify', data: {
-        'phone': phone,
-        'code': code,
-      });
+      final response = await client.post(
+        '/api/v1/auth/sms/verify',
+        data: {'phone': phone, 'code': code},
+      );
       final data = response.data as Map<String, dynamic>;
       _handleLoginSuccess(data);
     } catch (_) {
@@ -119,10 +119,10 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final client = ApiClient();
-      final response = await client.post('/api/v1/auth/login', data: {
-        'phone': phone,
-        'password': password,
-      });
+      final response = await client.post(
+        '/api/v1/auth/login',
+        data: {'phone': phone, 'password': password},
+      );
       final data = response.data as Map<String, dynamic>;
       _handleLoginSuccess(data);
     } catch (_) {
@@ -155,16 +155,17 @@ class _LoginPageState extends State<LoginPage> {
     // TODO: 接入微信SDK
     setState(() => _isLoading = false);
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('微信登录即将开放')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('微信登录即将开放')));
     }
   }
 
-  void _handleLoginSuccess(Map<String, dynamic> data) {
-    final token = data['token'] as String?;
+  Future<void> _handleLoginSuccess(Map<String, dynamic> data) async {
+    final token = (data['access_token'] ?? data['token']) as String?;
+    final refreshToken = data['refresh_token'] as String? ?? '';
     if (token != null) {
-      StorageManager.user.saveToken(token);
+      await StorageManager.user.saveToken(token, refreshToken: refreshToken);
     }
     if (!mounted) return;
     context.go('/home');
@@ -176,7 +177,9 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: ShunshiColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: ShunshiSpacing.pagePadding),
+          padding: const EdgeInsets.symmetric(
+            horizontal: ShunshiSpacing.pagePadding,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -200,10 +203,7 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 16),
                     Text('顺时', style: ShunshiTextStyles.greeting),
                     const SizedBox(height: 4),
-                    Text(
-                      '顺应时节，养生有道',
-                      style: ShunshiTextStyles.bodySecondary,
-                    ),
+                    Text('顺应时节，养生有道', style: ShunshiTextStyles.bodySecondary),
                   ],
                 ),
               ),
@@ -217,7 +217,9 @@ class _LoginPageState extends State<LoginPage> {
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: ShunshiColors.error.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      ShunshiSpacing.radiusMedium,
+                    ),
                   ),
                   child: Text(
                     _errorMessage!,
@@ -316,9 +318,13 @@ class _LoginPageState extends State<LoginPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ShunshiColors.primary,
                     foregroundColor: Colors.white,
-                    disabledBackgroundColor: ShunshiColors.primary.withValues(alpha: 0.5),
+                    disabledBackgroundColor: ShunshiColors.primary.withValues(
+                      alpha: 0.5,
+                    ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium),
+                      borderRadius: BorderRadius.circular(
+                        ShunshiSpacing.radiusMedium,
+                      ),
                     ),
                     elevation: 0,
                   ),
@@ -342,9 +348,9 @@ class _LoginPageState extends State<LoginPage> {
                 child: TextButton(
                   onPressed: () {
                     // 跳转注册（暂复用登录页）
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('注册页面即将开放')),
-                    );
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(const SnackBar(content: Text('注册页面即将开放')));
                   },
                   child: Text(
                     '还没有账号？立即注册',

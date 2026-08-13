@@ -16,13 +16,11 @@ class AIConfig {
 /// 模型信息
 class ModelInfo {
   final String name;
-  final String apiKey;
   final double temperature;
   final int maxTokens;
 
   const ModelInfo({
     required this.name,
-    required this.apiKey,
     this.temperature = 0.7,
     this.maxTokens = 2048,
   });
@@ -89,15 +87,15 @@ class AIResponse {
   }
 
   Map<String, dynamic> toJson() => {
-        'text': text,
-        'tone': tone,
-        'care_status': careStatus,
-        'follow_up': followUp?.toJson(),
-        'offline_encouraged': offlineEncouraged,
-        'presence_level': presenceLevel,
-        'safety_flag': safetyFlag,
-        'suggested_actions': suggestedActions,
-      };
+    'text': text,
+    'tone': tone,
+    'care_status': careStatus,
+    'follow_up': followUp?.toJson(),
+    'offline_encouraged': offlineEncouraged,
+    'presence_level': presenceLevel,
+    'safety_flag': safetyFlag,
+    'suggested_actions': suggestedActions,
+  };
 }
 
 /// 跟进
@@ -106,11 +104,7 @@ class FollowUp {
   final String intent;
   final String? message;
 
-  const FollowUp({
-    required this.inDays,
-    required this.intent,
-    this.message,
-  });
+  const FollowUp({required this.inDays, required this.intent, this.message});
 
   factory FollowUp.fromJson(Map<String, dynamic> json) {
     return FollowUp(
@@ -121,8 +115,8 @@ class FollowUp {
   }
 
   Map<String, dynamic> toJson() => {
-        'in_days': inDays,
-        'intent': intent,
-        'message': message,
-      };
+    'in_days': inDays,
+    'intent': intent,
+    'message': message,
+  };
 }

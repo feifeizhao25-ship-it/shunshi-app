@@ -1,6 +1,9 @@
 // lib/core/ai_router/ai_router.dart
 
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../prompt/prompt_manager.dart';
 import '../security/safety_filter.dart';
 import '../config/models.dart';
@@ -17,10 +20,10 @@ class AIRouter {
     PromptManager? promptManager,
     SafetyFilter? safetyFilter,
     Dio? dio,
-  })  : _config = config,
-        _promptManager = promptManager ?? PromptManager(),
-        _safetyFilter = safetyFilter ?? SafetyFilter(),
-        _dio = dio ?? Dio();
+  }) : _config = config,
+       _promptManager = promptManager ?? PromptManager(),
+       _safetyFilter = safetyFilter ?? SafetyFilter(),
+       _dio = dio ?? Dio();
 
   /// 主入口：处理 AI 请求
   Future<AIResponse> route(AIRequest request) async {
@@ -43,7 +46,7 @@ class AIRouter {
     final prompt = await _promptManager.build(request);
 
     // 4. 调用 LLM
-    final llmResponse = await _callLLM(model, prompt, request);
+    final llmResponse = await _callBackend(model, prompt, request);
 
     // 5. JSON Schema 校验与解析
     final parsed = _parseResponse(llmResponse, request.expectedSchema);
@@ -73,37 +76,39 @@ class AIRouter {
   }
 
   /// 调用 LLM
-  Future<String> _callLLM(ModelInfo model, String prompt, AIRequest request) async {
+  Future<String> _callBackend(
+    ModelInfo model,
+    String prompt,
+    AIRequest request,
+  ) async {
     try {
       final response = await _dio.post(
-        '${_config.apiGateway}/v1/chat/completions',
+        '${_config.apiGateway}/api/v1/ai/chat',
         data: {
-          'model': model.name,
-          'messages': [
-            {'role': 'system', 'content': prompt},
-            {'role': 'user', 'content': request.userInput},
-          ],
-          'temperature': model.temperature,
-          'max_tokens': model.maxTokens,
-          'response_format': {'type': 'json_object'},
+          'user_input': request.userInput,
+          'intent': request.intent,
+          'is_premium': request.isPremium,
+          'context': request.context,
+          'expected_schema': request.expectedSchema,
+          'prompt': prompt,
+          'model_tier': request.isPremium ? 'premium' : 'free',
         },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer ${model.apiKey}',
-            'X-Request-ID': request.requestId,
-          },
-        ),
+        options: Options(headers: {'X-Request-ID': request.requestId}),
       );
-
-      return response.data['choices'][0]['message']['content'];
+      final body = response.data;
+      if (body is String) return body;
+      if (body is Map<String, dynamic>) {
+        final content = body['content'] ?? body['message'] ?? body['data'];
+        return content is String ? content : jsonEncode(content ?? body);
+      }
+      return jsonEncode(body);
     } catch (e) {
-      // 降级处理
-      return await _fallback(request);
+      return jsonEncode((await _fallback(request)).toJson());
     }
   }
 
   /// 解析响应
-  AIResponse _parseResponse(String rawResponse, String schemaType) {
+  AIResponse _parseResponse(String rawResponse, String? schemaType) {
     try {
       final json = _safeJsonParse(rawResponse);
       return AIResponse.fromJson(json);
@@ -128,9 +133,10 @@ class AIRouter {
   }
 
   Map<String, dynamic> _parseJson(String jsonStr) {
-    // 简化版 JSON 解析
-    // 实际应使用 json.decode
-    return {'text': jsonStr};
+    final decoded = jsonDecode(jsonStr);
+    return decoded is Map<String, dynamic>
+        ? decoded
+        : Map<String, dynamic>.from(decoded as Map);
   }
 
   /// 日志记录
@@ -140,8 +146,10 @@ class AIRouter {
     String rawResponse,
     AIResponse response,
   ) async {
-    // 发送到日志服务
-    print('[AI Router] ${request.requestId}: ${model.name} -> ${response.careStatus}');
+    debugPrint(
+      '[AI Router] ${request.requestId}: ${model.name} -> '
+      '${response.careStatus}',
+    );
   }
 
   /// 降级处理

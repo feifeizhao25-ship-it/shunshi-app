@@ -61,3 +61,5 @@ build/app/
 # Large files to avoid
 *.jks
 *.keystore
+android/key.properties
+ios/ExportOptions.plist

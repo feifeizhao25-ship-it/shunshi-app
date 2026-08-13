@@ -99,4 +99,12 @@ class ShunshiTextStyles {
     color: ShunshiColors.textHint,
     letterSpacing: 0.8,
   );
+
+  /// Compact label used by dense information rows.
+  static const TextStyle labelSmall = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w500,
+    color: ShunshiColors.textSecondary,
+    height: 1.4,
+  );
 }

@@ -5,8 +5,10 @@ import '../../../core/theme/theme.dart';
 ///
 /// 轻柔的按压反馈，primary/secondary两种样式
 class GentleButton extends StatefulWidget {
-  final String text;
+  final String? text;
+  final String? label;
   final VoidCallback? onPressed;
+  final VoidCallback? onTap;
   final bool isPrimary;
   final bool isLoading;
   final IconData? icon;
@@ -14,13 +16,18 @@ class GentleButton extends StatefulWidget {
 
   const GentleButton({
     super.key,
-    required this.text,
+    this.text,
+    this.label,
     this.onPressed,
+    this.onTap,
     this.isPrimary = true,
     this.isLoading = false,
     this.icon,
     this.horizontalPadding,
-  });
+  }) : assert(text != null || label != null);
+
+  String get effectiveText => text ?? label!;
+  VoidCallback? get effectiveOnPressed => onPressed ?? onTap;
 
   @override
   State<GentleButton> createState() => _GentleButtonState();
@@ -58,9 +65,7 @@ class _GentleButtonState extends State<GentleButton>
           ? ShunshiDarkColors.primary
           : ShunshiDarkColors.surfaceDim;
     }
-    return widget.isPrimary
-        ? ShunshiColors.primary
-        : ShunshiColors.surfaceDim;
+    return widget.isPrimary ? ShunshiColors.primary : ShunshiColors.surfaceDim;
   }
 
   Color _textColor(BuildContext context) {
@@ -74,14 +79,14 @@ class _GentleButtonState extends State<GentleButton>
 
   @override
   Widget build(BuildContext context) {
-    final isEnabled = widget.onPressed != null && !widget.isLoading;
+    final isEnabled = widget.effectiveOnPressed != null && !widget.isLoading;
 
     return GestureDetector(
       onTapDown: isEnabled ? (_) => _controller.forward() : null,
       onTapUp: isEnabled
           ? (_) {
               _controller.reverse();
-              widget.onPressed?.call();
+              widget.effectiveOnPressed?.call();
             }
           : null,
       onTapCancel: isEnabled ? () => _controller.reverse() : null,
@@ -97,8 +102,7 @@ class _GentleButtonState extends State<GentleButton>
             ),
             decoration: BoxDecoration(
               color: _backgroundColor(context),
-              borderRadius:
-                  BorderRadius.circular(ShunshiSpacing.radiusXL),
+              borderRadius: BorderRadius.circular(ShunshiSpacing.radiusXL),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -122,7 +126,7 @@ class _GentleButtonState extends State<GentleButton>
                     ),
                   ),
                 Text(
-                  widget.text,
+                  widget.effectiveText,
                   style: ShunshiTextStyles.button.copyWith(
                     color: _textColor(context),
                   ),

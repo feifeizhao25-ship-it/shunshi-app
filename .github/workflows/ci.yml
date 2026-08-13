@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shunshi-cn-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.5
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - name: Reject analyzer errors
+        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Verify production release contracts
+        run: python3 scripts/verify_production_release.py
+      - run: flutter test --no-pub
+      - name: Build web release
+        run: >-
+          flutter build web --release
+          --dart-define=SHUNSHI_API_BASE_URL=https://ci.invalid
+      - name: Build Android release smoke artifact
+        env:
+          ALLOW_DEBUG_RELEASE_SIGNING: "true"
+        run: >-
+          flutter build apk --release
+          --dart-define=SHUNSHI_API_BASE_URL=https://ci.invalid

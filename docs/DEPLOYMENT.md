@@ -233,16 +233,17 @@ CREATE TABLE IF NOT EXISTS wellness_records (
 ### 1. 证书配置
 
 在 Apple Developer Console 创建：
-- App IDs（com.shunshi.shunshi）
+- App ID（com.shunshi.app）
 - Distribution Certificate
 - Provisioning Profile（App Store Connect）
 
 ### 2. 打包
 
 ```bash
-cd ios-cn/ios
+export SHUNSHI_API_BASE_URL="https://<your-production-api-host>"
 flutter build ipa --release \
-  --export-options-plist=ExportOptions.plist
+  --export-options-plist=ios/ExportOptions.plist \
+  --dart-define=SHUNSHI_API_BASE_URL="$SHUNSHI_API_BASE_URL"
 ```
 
 ### 3. 上传 App Store Connect
@@ -255,7 +256,9 @@ flutter build ipa --release \
 
 ### 1. Keystore 配置
 
-在 `android/app/build.gradle` 配置签名：
+复制 `android/key.properties.example` 为未纳入版本控制的
+`android/key.properties`，并将真实签名材料保存在仓库外。Codemagic 使用
+`shunshi_release` 签名标识和 `shunshi_production` 环境变量组。
 
 ```groovy
 android {
@@ -278,8 +281,9 @@ android {
 ### 2. 构建 APK
 
 ```bash
-flutter build apk --release
-# 输出: build/app/outputs/flutter-apk/app-release.apk
+flutter build appbundle --release \
+  --dart-define=SHUNSHI_API_BASE_URL="$SHUNSHI_API_BASE_URL"
+# 输出: build/app/outputs/bundle/release/app-release.aab
 ```
 
 ### 3. 国内应用市场

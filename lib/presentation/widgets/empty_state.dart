@@ -2,21 +2,23 @@ import 'package:flutter/material.dart';
 
 /// 空状态组件
 class EmptyState extends StatelessWidget {
-  final IconData icon;
-  final String title;
+  final IconData? icon;
+  final String? title;
+  final String? message;
   final String? description;
   final String? actionLabel;
   final VoidCallback? onAction;
-  
+
   const EmptyState({
     super.key,
-    required this.icon,
-    required this.title,
+    this.icon,
+    this.title,
+    this.message,
     this.description,
     this.actionLabel,
     this.onAction,
-  });
-  
+  }) : assert(title != null || message != null);
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -25,33 +27,26 @@ class EmptyState extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 80, color: Colors.grey[400]),
-            const SizedBox(height: 24),
+            if (icon != null) ...[
+              Icon(icon, size: 80, color: Colors.grey[400]),
+              const SizedBox(height: 24),
+            ],
             Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              title ?? message!,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
             if (description != null) ...[
               const SizedBox(height: 8),
               Text(
                 description!,
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 14,
-                ),
+                style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 textAlign: TextAlign.center,
               ),
             ],
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: onAction,
-                child: Text(actionLabel!),
-              ),
+              ElevatedButton(onPressed: onAction, child: Text(actionLabel!)),
             ],
           ],
         ),
@@ -63,9 +58,9 @@ class EmptyState extends StatelessWidget {
 /// 网络错误状态
 class NetworkErrorState extends StatelessWidget {
   final VoidCallback? onRetry;
-  
+
   const NetworkErrorState({super.key, this.onRetry});
-  
+
   @override
   Widget build(BuildContext context) {
     return EmptyState(
@@ -82,13 +77,9 @@ class NetworkErrorState extends StatelessWidget {
 class ErrorState extends StatelessWidget {
   final String message;
   final VoidCallback? onRetry;
-  
-  const ErrorState({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
-  
+
+  const ErrorState({super.key, required this.message, this.onRetry});
+
   @override
   Widget build(BuildContext context) {
     return EmptyState(
