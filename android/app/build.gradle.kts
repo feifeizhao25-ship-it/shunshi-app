@@ -1,3 +1,6 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -32,11 +35,55 @@ android {
         multiDexEnabled = true
     }
 
+    val keystoreProperties = Properties()
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    val isReleaseBuild = gradle.startParameter.taskNames.any {
+        it.lowercase().contains("release")
+    }
+    val allowDebugReleaseSigning =
+        System.getenv("ALLOW_DEBUG_RELEASE_SIGNING") == "true"
+    val codemagicKeystorePath = System.getenv("CM_KEYSTORE_PATH")
+    val hasCodemagicSigning = listOf(
+        "CM_KEYSTORE_PATH",
+        "CM_KEYSTORE_PASSWORD",
+        "CM_KEY_ALIAS",
+        "CM_KEY_PASSWORD",
+    ).all { !System.getenv(it).isNullOrBlank() }
+    if (keystorePropertiesFile.exists()) {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    } else if (isReleaseBuild && !hasCodemagicSigning && !allowDebugReleaseSigning) {
+        throw GradleException(
+            "Release keystore is required. Add android/key.properties, configure " +
+                "Codemagic signing, or set ALLOW_DEBUG_RELEASE_SIGNING=true " +
+                "for CI smoke builds only."
+        )
+    }
+
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            } else if (hasCodemagicSigning) {
+                storeFile = file(codemagicKeystorePath!!)
+                storePassword = System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("CM_KEY_ALIAS")
+                keyPassword = System.getenv("CM_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = if (keystorePropertiesFile.exists() || hasCodemagicSigning) {
+                signingConfigs.getByName("release")
+            } else if (allowDebugReleaseSigning) {
+                signingConfigs.getByName("debug")
+            } else {
+                null
+            }
         }
     }
 }

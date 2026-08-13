@@ -46,11 +46,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   ];
 
   // 快捷问题
-  final List<String> _quickQuestions = [
-    '今天吃什么好',
-    '最近睡不好怎么办',
-    '适合做什么运动',
-  ];
+  final List<String> _quickQuestions = ['今天吃什么好', '最近睡不好怎么办', '适合做什么运动'];
 
   @override
   void initState() {
@@ -97,12 +93,16 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
     setState(() {
       _isLoading = true;
-      _messages.add(_ChatMessage(
-        content: text.isEmpty ? '[图片]' : text,
-        isUser: true,
-        time: DateTime.now(),
-        imagePaths: _selectedImagePaths.isNotEmpty ? List.from(_selectedImagePaths) : null,
-      ));
+      _messages.add(
+        _ChatMessage(
+          content: text.isEmpty ? '[图片]' : text,
+          isUser: true,
+          time: DateTime.now(),
+          imagePaths: _selectedImagePaths.isNotEmpty
+              ? List.from(_selectedImagePaths)
+              : null,
+        ),
+      );
     });
 
     _messageController.clear();
@@ -118,20 +118,24 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
       setState(() {
         _isLoading = false;
-        _messages.add(_ChatMessage(
-          content: aiResponse,
-          isUser: false,
-          time: DateTime.now(),
-        ));
+        _messages.add(
+          _ChatMessage(
+            content: aiResponse,
+            isUser: false,
+            time: DateTime.now(),
+          ),
+        );
       });
     } catch (e) {
       setState(() {
         _isLoading = false;
-        _messages.add(_ChatMessage(
-          content: '抱歉，连接出了问题。请检查网络后重试～',
-          isUser: false,
-          time: DateTime.now(),
-        ));
+        _messages.add(
+          _ChatMessage(
+            content: '抱歉，连接出了问题。请检查网络后重试～',
+            isUser: false,
+            time: DateTime.now(),
+          ),
+        );
       });
     }
 
@@ -191,11 +195,17 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     if (source == null) return;
     try {
       final picker = ImagePicker();
-      final image = await picker.pickImage(source: source, maxWidth: 1024, imageQuality: 85);
+      final image = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        imageQuality: 85,
+      );
       if (image != null) setState(() => _selectedImagePaths.add(image.path));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('选择图片失败: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('选择图片失败: $e')));
       }
     }
   }
@@ -209,7 +219,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         elevation: 0,
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 18, color: Color(0xFF2C2C2C)),
+          icon: const Icon(
+            Icons.arrow_back_ios,
+            size: 18,
+            color: Color(0xFF2C2C2C),
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -231,7 +245,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 // 图片预览
                 if (_selectedImagePaths.isNotEmpty) _buildImagePreview(),
                 // 快捷问题chips
-                if (_messages.length <= 1 && !_isLoading) _buildQuickQuestions(),
+                if (_messages.length <= 1 && !_isLoading)
+                  _buildQuickQuestions(),
                 // 输入区域
                 _buildInputArea(),
               ],
@@ -278,13 +293,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               onPageChanged: (index) => setState(() => _guidePage = index),
               itemBuilder: (context, index) {
                 final card = guideCards[index];
-                return Padding(
+                return SingleChildScrollView(
                   padding: const EdgeInsets.symmetric(horizontal: 48),
                   child: Column(
                     children: [
-                      const SizedBox(height: 60),
+                      const SizedBox(height: 24),
                       Text(card.emoji, style: const TextStyle(fontSize: 72)),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 20),
                       Text(
                         card.title,
                         style: const TextStyle(
@@ -341,7 +356,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   backgroundColor: const Color(0xFF4A7C6F),
                   foregroundColor: Colors.white,
                   elevation: 0,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
                 child: Text(
                   _guidePage == guideCards.length - 1 ? '开始聊天' : '继续',
@@ -356,7 +373,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               padding: const EdgeInsets.only(bottom: 40),
               child: TextButton(
                 onPressed: _dismissGuideCards,
-                child: const Text('跳过', style: TextStyle(color: Color(0xFF9B9B9B), fontSize: 14)),
+                child: const Text(
+                  '跳过',
+                  style: TextStyle(color: Color(0xFF9B9B9B), fontSize: 14),
+                ),
               ),
             ),
         ],
@@ -408,16 +428,29 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(8),
-                  child: Image.file(File(path), width: 64, height: 64, fit: BoxFit.cover),
+                  child: Image.file(
+                    File(path),
+                    width: 64,
+                    height: 64,
+                    fit: BoxFit.cover,
+                  ),
                 ),
                 Positioned(
                   top: 0,
                   right: 0,
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedImagePaths.removeAt(index)),
+                    onTap: () =>
+                        setState(() => _selectedImagePaths.removeAt(index)),
                     child: Container(
-                      decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
-                      child: const Icon(Icons.close, size: 16, color: Colors.white),
+                      decoration: const BoxDecoration(
+                        color: Colors.black54,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 16,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -433,7 +466,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 border: Border.all(color: const Color(0xFFE8E5E0)),
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.add_photo_alternate, color: Color(0xFF9B9B9B)),
+              child: const Icon(
+                Icons.add_photo_alternate,
+                color: Color(0xFF9B9B9B),
+              ),
             ),
           );
         },
@@ -460,7 +496,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   _sendMessage();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(999),
@@ -468,7 +507,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   ),
                   child: Text(
                     q,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF6B6B6B)),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF6B6B6B),
+                    ),
                   ),
                 ),
               ),
@@ -486,9 +528,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFFFAF8F5),
-      ),
+      decoration: const BoxDecoration(color: Color(0xFFFAF8F5)),
       child: SafeArea(
         top: false,
         child: Row(
@@ -507,12 +547,21 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     Expanded(
                       child: TextField(
                         controller: _messageController,
-                        style: const TextStyle(fontSize: 15, color: Color(0xFF2C2C2C)),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Color(0xFF2C2C2C),
+                        ),
                         decoration: const InputDecoration(
                           hintText: '输入消息...',
-                          hintStyle: TextStyle(color: Color(0xFFCCCCCC), fontSize: 15),
+                          hintStyle: TextStyle(
+                            color: Color(0xFFCCCCCC),
+                            fontSize: 15,
+                          ),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 14,
+                          ),
                           isDense: true,
                         ),
                         onSubmitted: (_) => _sendMessage(),
@@ -526,7 +575,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           margin: const EdgeInsets.only(right: 4),
                           child: Icon(
                             _isListening ? Icons.mic : Icons.mic_none,
-                            color: _isListening ? const Color(0xFFD4726A) : const Color(0xFF9B9B9B),
+                            color: _isListening
+                                ? const Color(0xFFD4726A)
+                                : const Color(0xFF9B9B9B),
                             size: 22,
                           ),
                         ),
@@ -544,14 +595,19 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: _isLoading ? const Color(0xFFE8E5E0) : const Color(0xFF4A7C6F),
+                  color: _isLoading
+                      ? const Color(0xFFE8E5E0)
+                      : const Color(0xFF4A7C6F),
                   shape: BoxShape.circle,
                 ),
                 child: _isLoading
                     ? const SizedBox(
                         width: 20,
                         height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
                       )
                     : const Icon(Icons.send, color: Colors.white, size: 20),
               ),
@@ -591,7 +647,9 @@ class _MessageBubble extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
-            color: const Color(0xFF4A7C6F).withValues(alpha: 0.3), // primaryLight.withValues(alpha: 0.3)
+            color: const Color(
+              0xFF4A7C6F,
+            ).withValues(alpha: 0.3), // primaryLight.withValues(alpha: 0.3)
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(16),
               topRight: Radius.circular(16),
@@ -609,7 +667,12 @@ class _MessageBubble extends StatelessWidget {
                   children: message.imagePaths!.map((path) {
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: Image.file(File(path), width: 120, height: 120, fit: BoxFit.cover),
+                      child: Image.file(
+                        File(path),
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
                     );
                   }).toList(),
                 ),
@@ -687,20 +750,29 @@ class _MessageBubble extends StatelessWidget {
 
     for (final line in lines) {
       // 检测建议卡标记（🌿 或 💡 开头的行）
-      if (line.trimLeft().startsWith('🌿') || line.trimLeft().startsWith('💡')) {
+      if (line.trimLeft().startsWith('🌿') ||
+          line.trimLeft().startsWith('💡')) {
         // 先flush前面的文字
         if (textLines.isNotEmpty) {
-          widgets.add(Text(
-            textLines.join('\n'),
-            style: const TextStyle(fontSize: 15, color: Color(0xFF2C2C2C), height: 1.6),
-          ));
+          widgets.add(
+            Text(
+              textLines.join('\n'),
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(0xFF2C2C2C),
+                height: 1.6,
+              ),
+            ),
+          );
           widgets.add(const SizedBox(height: 12));
           textLines.clear();
         }
-        widgets.add(_SuggestionEmbed(
-          icon: line.trimLeft().startsWith('🌿') ? '🌿' : '💡',
-          title: line.replaceFirst(RegExp(r'^\s*[🌿💡]\s*'), ''),
-        ));
+        widgets.add(
+          _SuggestionEmbed(
+            icon: line.trimLeft().startsWith('🌿') ? '🌿' : '💡',
+            title: line.replaceFirst(RegExp(r'^\s*[🌿💡]\s*'), ''),
+          ),
+        );
         widgets.add(const SizedBox(height: 4));
         inSuggestion = true;
       } else if (inSuggestion && line.trim().isNotEmpty) {
@@ -714,17 +786,29 @@ class _MessageBubble extends StatelessWidget {
 
     // flush剩余文字
     if (textLines.isNotEmpty) {
-      widgets.add(Text(
-        textLines.join('\n'),
-        style: const TextStyle(fontSize: 15, color: Color(0xFF2C2C2C), height: 1.6),
-      ));
+      widgets.add(
+        Text(
+          textLines.join('\n'),
+          style: const TextStyle(
+            fontSize: 15,
+            color: Color(0xFF2C2C2C),
+            height: 1.6,
+          ),
+        ),
+      );
     }
 
     if (widgets.isEmpty) {
-      widgets.add(Text(
-        content,
-        style: const TextStyle(fontSize: 15, color: Color(0xFF2C2C2C), height: 1.6),
-      ));
+      widgets.add(
+        Text(
+          content,
+          style: const TextStyle(
+            fontSize: 15,
+            color: Color(0xFF2C2C2C),
+            height: 1.6,
+          ),
+        ),
+      );
     }
 
     return widgets;
@@ -748,7 +832,9 @@ class _SuggestionEmbed extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFF4A7C6F).withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF4A7C6F).withValues(alpha: 0.15)),
+        border: Border.all(
+          color: const Color(0xFF4A7C6F).withValues(alpha: 0.15),
+        ),
       ),
       child: Row(
         children: [
@@ -760,7 +846,11 @@ class _SuggestionEmbed extends StatelessWidget {
               style: const TextStyle(fontSize: 14, color: Color(0xFF2C2C2C)),
             ),
           ),
-          const Icon(Icons.arrow_forward_ios, size: 12, color: Color(0xFF9B9B9B)),
+          const Icon(
+            Icons.arrow_forward_ios,
+            size: 12,
+            color: Color(0xFF9B9B9B),
+          ),
         ],
       ),
     );
@@ -810,7 +900,11 @@ class _TypingIndicatorState extends State<_TypingIndicator>
             bottomRight: Radius.circular(16),
           ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: 0.04), offset: const Offset(0, 2), blurRadius: 8),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              offset: const Offset(0, 2),
+              blurRadius: 8,
+            ),
           ],
         ),
         child: AnimatedBuilder(
@@ -826,7 +920,9 @@ class _TypingIndicatorState extends State<_TypingIndicator>
                   width: 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4A7C6F).withValues(alpha: 0.3 + value * 0.5),
+                    color: const Color(
+                      0xFF4A7C6F,
+                    ).withValues(alpha: 0.3 + value * 0.5),
                     shape: BoxShape.circle,
                   ),
                 );

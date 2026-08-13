@@ -1,0 +1,5 @@
+# Copy to android/key.properties for a local signed release. Never commit secrets.
+storePassword=replace-in-local-secret-store
+keyPassword=replace-in-local-secret-store
+keyAlias=shunshi
+storeFile=/absolute/path/outside/repository/shunshi-release.jks

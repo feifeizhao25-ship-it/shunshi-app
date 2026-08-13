@@ -32,7 +32,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadHemisphere() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) setState(() => _hemisphere = prefs.getString('hemisphere') ?? 'north');
+    if (mounted)
+      setState(() => _hemisphere = prefs.getString('hemisphere') ?? 'north');
   }
 
   Future<void> _setHemisphere(String value) async {
@@ -59,7 +60,8 @@ class _ProfilePageState extends State<ProfilePage> {
           children: [
             Center(
               child: Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
                   color: _textHint(context).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
@@ -67,11 +69,18 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('选择半球', style: ShunshiTextStyles.heading.copyWith(color: _textPrimary(context))),
+            Text(
+              '选择半球',
+              style: ShunshiTextStyles.heading.copyWith(
+                color: _textPrimary(context),
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               '影响首页显示的季节内容',
-              style: ShunshiTextStyles.caption.copyWith(color: _textHint(context)),
+              style: ShunshiTextStyles.caption.copyWith(
+                color: _textHint(context),
+              ),
             ),
             const SizedBox(height: 20),
             _buildHemisphereOption(
@@ -79,7 +88,10 @@ class _ProfilePageState extends State<ProfilePage> {
               label: '北半球',
               desc: '北美、欧洲、亚洲（北部）',
               isSelected: _hemisphere == 'north',
-              onTap: () { Navigator.pop(ctx); _setHemisphere('north'); },
+              onTap: () {
+                Navigator.pop(ctx);
+                _setHemisphere('north');
+              },
             ),
             const SizedBox(height: 12),
             _buildHemisphereOption(
@@ -87,7 +99,10 @@ class _ProfilePageState extends State<ProfilePage> {
               label: '南半球',
               desc: '南美、澳大利亚、非洲（南部）',
               isSelected: _hemisphere == 'south',
-              onTap: () { Navigator.pop(ctx); _setHemisphere('south'); },
+              onTap: () {
+                Navigator.pop(ctx);
+                _setHemisphere('south');
+              },
             ),
             const SizedBox(height: 16),
           ],
@@ -96,7 +111,8 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildHemisphereOption(BuildContext context, {
+  Widget _buildHemisphereOption(
+    BuildContext context, {
     required String label,
     required String desc,
     required bool isSelected,
@@ -109,7 +125,9 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? primary.withValues(alpha: 0.08) : Colors.transparent,
+          color: isSelected
+              ? primary.withValues(alpha: 0.08)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? primary : Colors.transparent,
@@ -128,9 +146,20 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: ShunshiTextStyles.body.copyWith(color: _textPrimary(context), fontWeight: FontWeight.w500)),
+                  Text(
+                    label,
+                    style: ShunshiTextStyles.body.copyWith(
+                      color: _textPrimary(context),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(desc, style: ShunshiTextStyles.caption.copyWith(color: _textSecondary(context))),
+                  Text(
+                    desc,
+                    style: ShunshiTextStyles.caption.copyWith(
+                      color: _textSecondary(context),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -167,14 +196,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // ── 颜色获取 ──
 
-  Color _bg(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.background : ShunshiColors.background;
+  Color _bg(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.background
+      : ShunshiColors.background;
   Color _surface(BuildContext context) =>
       _isDark(context) ? ShunshiDarkColors.surface : ShunshiColors.surface;
-  Color _textPrimary(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.textPrimary : ShunshiColors.textPrimary;
-  Color _textSecondary(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.textSecondary : ShunshiColors.textSecondary;
+  Color _textPrimary(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.textPrimary
+      : ShunshiColors.textPrimary;
+  Color _textSecondary(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.textSecondary
+      : ShunshiColors.textSecondary;
   Color _textHint(BuildContext context) =>
       _isDark(context) ? ShunshiDarkColors.textHint : ShunshiColors.textHint;
   Color _border(BuildContext context) =>
@@ -183,8 +215,9 @@ class _ProfilePageState extends State<ProfilePage> {
       _isDark(context) ? ShunshiDarkColors.divider : ShunshiColors.divider;
   Color _primary(BuildContext context) =>
       _isDark(context) ? ShunshiDarkColors.primary : ShunshiColors.primary;
-  Color _primaryLight(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.primaryLight : ShunshiColors.primaryLight;
+  Color _primaryLight(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.primaryLight
+      : ShunshiColors.primaryLight;
   Color _error(BuildContext context) =>
       _isDark(context) ? ShunshiDarkColors.error : ShunshiColors.error;
 
@@ -224,7 +257,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     // ── 使用统计 ──
                     Padding(
                       padding: const EdgeInsets.only(
-                        left: ShunshiSpacing.cardPadding - ShunshiSpacing.pagePadding + 4,
+                        left:
+                            ShunshiSpacing.cardPadding -
+                            ShunshiSpacing.pagePadding +
+                            4,
                       ),
                       child: Text(
                         '使用统计',
@@ -444,15 +480,21 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
       child: Column(
         children: List.generate(items.length, (index) {
-          return _buildFeatureItem(context, items[index],
-              isLast: index == items.length - 1);
+          return _buildFeatureItem(
+            context,
+            items[index],
+            isLast: index == items.length - 1,
+          );
         }),
       ),
     );
   }
 
-  Widget _buildFeatureItem(BuildContext context, _MenuItemData item,
-      {required bool isLast}) {
+  Widget _buildFeatureItem(
+    BuildContext context,
+    _MenuItemData item, {
+    required bool isLast,
+  }) {
     return InkWell(
       onTap: item.onTap,
       child: Container(
@@ -512,7 +554,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   if (item.value != null) const SizedBox(width: 4),
-                  Icon(Icons.chevron_right, color: _textHint(context), size: 20),
+                  Icon(
+                    Icons.chevron_right,
+                    color: _textHint(context),
+                    size: 20,
+                  ),
                 ],
               ),
           ],
@@ -542,7 +588,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               decoration: BoxDecoration(
                 border: Border(
-                    bottom: BorderSide(color: _divider(context), width: 1)),
+                  bottom: BorderSide(color: _divider(context), width: 1),
+                ),
               ),
               child: Row(
                 children: [
@@ -556,8 +603,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-                  Icon(Icons.chevron_right,
-                      color: _textHint(context), size: 20),
+                  Icon(
+                    Icons.chevron_right,
+                    color: _textHint(context),
+                    size: 20,
+                  ),
                 ],
               ),
             ),
@@ -571,8 +621,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 vertical: ShunshiSpacing.listItemPadding,
               ),
               decoration: const BoxDecoration(
-                borderRadius:
-                    BorderRadius.vertical(bottom: Radius.circular(20)),
+                borderRadius: BorderRadius.vertical(
+                  bottom: Radius.circular(20),
+                ),
               ),
               child: Row(
                 children: [
@@ -586,8 +637,11 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-                  Icon(Icons.chevron_right,
-                      color: _textHint(context), size: 20),
+                  Icon(
+                    Icons.chevron_right,
+                    color: _textHint(context),
+                    size: 20,
+                  ),
                 ],
               ),
             ),
@@ -604,13 +658,8 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _surface(context),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        title: Text(
-          '清空记忆',
-          style: ShunshiTextStyles.heading,
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('清空记忆', style: ShunshiTextStyles.heading),
         content: Text(
           '确定要清空所有记忆吗？此操作不可恢复',
           style: ShunshiTextStyles.bodySecondary.copyWith(
@@ -640,9 +689,7 @@ class _ProfilePageState extends State<ProfilePage> {
             },
             child: Text(
               '清空',
-              style: ShunshiTextStyles.button.copyWith(
-                color: _error(context),
-              ),
+              style: ShunshiTextStyles.button.copyWith(color: _error(context)),
             ),
           ),
         ],
@@ -727,11 +774,13 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: _primary(context),
                   foregroundColor: Colors.white,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: ShunshiSpacing.md),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: ShunshiSpacing.md,
+                  ),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(ShunshiSpacing.radiusLarge),
+                    borderRadius: BorderRadius.circular(
+                      ShunshiSpacing.radiusLarge,
+                    ),
                   ),
                 ),
                 child: Text('确认', style: ShunshiTextStyles.button),
@@ -748,7 +797,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _handleRestorePurchase(BuildContext context) async {
     final store = StoreService();
-    if (!store.isAvailable) {
+    if (!await store.initialize()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -764,11 +813,11 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => Center(
-            child: CircularProgressIndicator(
-              color: _primary(context),
-              strokeWidth: 2,
-            ),
-          ),
+        child: CircularProgressIndicator(
+          color: _primary(context),
+          strokeWidth: 2,
+        ),
+      ),
     );
 
     try {

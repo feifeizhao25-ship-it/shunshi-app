@@ -46,18 +46,22 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   bool _isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
-  Color _bg(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.background : ShunshiColors.background;
-  Color _textPrimary(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.textPrimary : ShunshiColors.textPrimary;
-  Color _textSecondary(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.textSecondary : ShunshiColors.textSecondary;
+  Color _bg(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.background
+      : ShunshiColors.background;
+  Color _textPrimary(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.textPrimary
+      : ShunshiColors.textPrimary;
+  Color _textSecondary(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.textSecondary
+      : ShunshiColors.textSecondary;
   Color _textHint(BuildContext context) =>
       _isDark(context) ? ShunshiDarkColors.textHint : ShunshiColors.textHint;
   Color _border(BuildContext context) =>
       _isDark(context) ? ShunshiDarkColors.border : ShunshiColors.border;
-  Color _surfaceDim(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.surfaceDim : ShunshiColors.surfaceDim;
+  Color _surfaceDim(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.surfaceDim
+      : ShunshiColors.surfaceDim;
 
   @override
   Widget build(BuildContext context) {
@@ -77,8 +81,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: Icon(Icons.arrow_back_ios_new,
-                        color: _textPrimary(context), size: 20),
+                    icon: Icon(
+                      Icons.arrow_back_ios_new,
+                      color: _textPrimary(context),
+                      size: 20,
+                    ),
                   ),
                   Expanded(
                     child: Text(
@@ -113,8 +120,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               ...List.generate(_plans.length, (index) {
                 return Padding(
                   padding: EdgeInsets.only(
-                    bottom:
-                        index < _plans.length - 1 ? ShunshiSpacing.md : 0,
+                    bottom: index < _plans.length - 1 ? ShunshiSpacing.md : 0,
                   ),
                   child: _buildPlanCard(context, _plans[index], index),
                 );
@@ -204,8 +210,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     color: isSelected
                         ? plan.color.withValues(alpha: 0.15)
                         : _surfaceDim(context),
-                    borderRadius:
-                        BorderRadius.circular(ShunshiSpacing.radiusMedium),
+                    borderRadius: BorderRadius.circular(
+                      ShunshiSpacing.radiusMedium,
+                    ),
                   ),
                   child: Icon(plan.icon, color: plan.color, size: 22),
                 ),
@@ -227,7 +234,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                       color: plan.color,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.check, color: Colors.white, size: 16),
+                    child: const Icon(
+                      Icons.check,
+                      color: Colors.white,
+                      size: 16,
+                    ),
                   )
                 else
                   Container(
@@ -235,8 +246,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
                     height: 24,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                          color: _textHint(context), width: 1.5),
+                      border: Border.all(color: _textHint(context), width: 1.5),
                     ),
                   ),
               ],
@@ -270,25 +280,29 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             const SizedBox(height: ShunshiSpacing.md),
 
             // 功能列表
-            ...plan.features.map((feature) => Padding(
-                  padding: EdgeInsets.only(
-                    bottom:
-                        feature != plan.features.last ? ShunshiSpacing.xs : 0,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle_outline,
-                          color: plan.color, size: 16),
-                      const SizedBox(width: ShunshiSpacing.sm),
-                      Text(
-                        feature,
-                        style: ShunshiTextStyles.bodySecondary.copyWith(
-                          color: _textPrimary(context),
-                        ),
+            ...plan.features.map(
+              (feature) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: feature != plan.features.last ? ShunshiSpacing.xs : 0,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline,
+                      color: plan.color,
+                      size: 16,
+                    ),
+                    const SizedBox(width: ShunshiSpacing.sm),
+                    Text(
+                      feature,
+                      style: ShunshiTextStyles.bodySecondary.copyWith(
+                        color: _textPrimary(context),
                       ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -312,7 +326,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Future<void> _handleRestorePurchase() async {
     final store = StoreService();
-    if (!store.isAvailable) {
+    if (!await store.initialize()) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -328,11 +342,11 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       context: context,
       barrierDismissible: false,
       builder: (context) => Center(
-            child: CircularProgressIndicator(
-              color: ShunshiColors.primary,
-              strokeWidth: 2,
-            ),
-          ),
+        child: CircularProgressIndicator(
+          color: ShunshiColors.primary,
+          strokeWidth: 2,
+        ),
+      ),
     );
 
     try {

@@ -3,24 +3,24 @@
 
 /// 会员等级
 enum SubscriptionTier {
-  free,       // 免费版
-  standard,   // 标准版
-  premium,    // 尊享版
-  family,     // 家庭版
+  free, // 免费版
+  standard, // 标准版
+  premium, // 尊享版
+  family, // 家庭版
 }
 
 /// 中医体质类型
 enum ConstitutionType {
-  balanced,      // 平和质
-  qiDeficiency,  // 气虚质
-  yangDeficiency,// 阳虚质
+  balanced, // 平和质
+  qiDeficiency, // 气虚质
+  yangDeficiency, // 阳虚质
   yinDeficiency, // 阴虚质
-  phlegmDamp,    // 痰湿质
-  dampHeat,      // 湿热质
-  bloodStasis,   // 血瘀质
-  qiStagnation,  // 气郁质
-  allergic,      // 特禀质
-  unknown,       // 未识别
+  phlegmDamp, // 痰湿质
+  dampHeat, // 湿热质
+  bloodStasis, // 血瘀质
+  qiStagnation, // 气郁质
+  allergic, // 特禀质
+  unknown, // 未识别
 }
 
 /// 性别
@@ -160,6 +160,8 @@ class User {
     lastActiveAt: json['last_active_at'] != null
         ? DateTime.tryParse(json['last_active_at'] as String)
         : null,
-    preferences: json['preferences'] as Map<String, dynamic>? ?? {},
+    preferences: json['preferences'] is Map
+        ? Map<String, dynamic>.from(json['preferences'] as Map)
+        : const {},
   );
 }

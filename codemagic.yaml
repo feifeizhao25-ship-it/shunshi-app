@@ -1,39 +1,60 @@
 workflows:
   ios-workflow:
-    name: iOS Build
+    name: iOS App Store Build
     max_build_duration: 120
     environment:
-      flutter-version: "3.24.0"
-      xcode: "15.0"
-      cocoapods: "1.15.0"
+      flutter: 3.38.5
+      xcode: latest
+      cocoapods: default
+      groups:
+        - shunshi_production
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.shunshi.app
     scripts:
-      - name: Set up code signing
-        script: |
-          keychain initialize
-          app-store-connect fetch-signing-files "com.shunshi.app" --type IOS_APP_STORE --create
-          keychain add-certificates --certificate-password=$KEY_CERTIFICATE_PASSWORD --certificate $KEY_CERTIFICATE_PATH --keystore-password $KEYSTORE_PASSWORD --keystore $KEYSTORE_PATH --provider $KEY_PROVIDER --profile-name "ShunShi App Store"
       - name: Get Flutter dependencies
+        script: flutter pub get
+      - name: Verify production release contracts
         script: |
-          flutter packages pub get
-      - name: Build iOS
-        script: |
-          flutter build ipa --release --export-options-plist ios/ExportOptions.plist --no-codesign
+          python3 scripts/verify_production_release.py
+          test -n "$SHUNSHI_API_BASE_URL" || {
+            echo "SHUNSHI_API_BASE_URL is required"
+            exit 1
+          }
+      - name: Apply iOS signing profiles
+        script: xcode-project use-profiles
+      - name: Build signed iOS archive
+        script: >-
+          flutter build ipa --release
+          --export-options-plist=/Users/builder/export_options.plist
+          --dart-define=SHUNSHI_API_BASE_URL="$SHUNSHI_API_BASE_URL"
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
 
   android-workflow:
-    name: Android Build
+    name: Android Production Build
     max_build_duration: 60
     environment:
-      flutter-version: "3.24.0"
-      java-version: "17"
+      flutter: 3.38.5
+      java: 17
+      groups:
+        - shunshi_production
+      android_signing:
+        - shunshi_release
     scripts:
       - name: Get Flutter dependencies
+        script: flutter pub get
+      - name: Verify production release contracts
         script: |
-          flutter packages pub get
-      - name: Build Android
-        script: |
-          flutter build apk --release
+          python3 scripts/verify_production_release.py
+          test -n "$SHUNSHI_API_BASE_URL" || {
+            echo "SHUNSHI_API_BASE_URL is required"
+            exit 1
+          }
+      - name: Build signed Android App Bundle
+        script: >-
+          flutter build appbundle --release
+          --dart-define=SHUNSHI_API_BASE_URL="$SHUNSHI_API_BASE_URL"
     artifacts:
-      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/bundle/release/*.aab
