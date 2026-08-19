@@ -20,6 +20,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   String _greeting = '';
   String _dailyInsight = '今天适合慢下来\n给自己泡一杯茶';
   bool _isLoading = true;
+  // 加载失败时对用户可见，而不是静默展示预置内容
+  String? _loadError;
 
   // 建议卡片数据
   final List<_SuggestionItem> _suggestions = [
@@ -72,16 +74,37 @@ class _HomePageState extends ConsumerState<HomePage> {
         });
       }
     } catch (e) {
-      // API call failed, use hardcoded data
+      // 接口失败时不再静默回落到预置内容——那会让用户以为看到的是真实数据。
       debugPrint('Home dashboard API call failed: $e');
+      if (mounted) {
+        setState(() {
+          _loadError = '内容加载失败，请检查网络后重试';
+          _isLoading = false;
+        });
+      }
+      return;
     }
 
     if (mounted) {
       setState(() {
         _greeting = _greeting.isEmpty ? _getGreeting() : _greeting;
+        _loadError = null;
         _isLoading = false;
       });
     }
+  }
+
+  /// 供 UI 层读取的加载错误，非空时应展示错误态与重试入口。
+  String? get loadError => _loadError;
+
+  /// 重新拉取每日内容（错误态重试按钮调用）。
+  Future<void> retryLoadDailyContent() async {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    await _loadDailyContent();
   }
 
   String _getIconForCategory(String category) {
@@ -114,6 +137,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator(strokeWidth: 2))
+            : _loadError != null
+            ? _buildErrorState()
             : SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -147,6 +172,58 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ],
                 ),
               ),
+      ),
+    );
+  }
+
+  // ──────────────────────────────────────────────
+  // 加载失败态
+  //
+  // 此前接口失败时会静默展示预置内容，用户完全看不出数据是假的。
+  // 现在明确告知并提供重试。
+  // ──────────────────────────────────────────────
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.cloud_off_outlined,
+              size: 48,
+              color: Color(0xFFBDB8B0),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              _loadError ?? '内容加载失败',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w300,
+                color: Color(0xFF6B6660),
+                height: 1.6,
+              ),
+            ),
+            const SizedBox(height: 28),
+            OutlinedButton(
+              onPressed: retryLoadDailyContent,
+              style: OutlinedButton.styleFrom(
+                foregroundColor: const Color(0xFF2C2C2C),
+                side: const BorderSide(color: Color(0xFFD9D4CC)),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              child: const Text(
+                '重试',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w400),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

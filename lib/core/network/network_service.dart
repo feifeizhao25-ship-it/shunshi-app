@@ -5,8 +5,15 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import '../config/app_config.dart';
 import '../storage/token_storage.dart';
 import '../storage/local_storage.dart';
+
+/// API 根地址，统一由 AppConfig 提供。
+///
+/// AppConfig 在 release 构建下会强制要求通过 `--dart-define=SHUNSHI_API_BASE_URL=...`
+/// 注入真实地址，避免打包后请求打向设备本机。
+String get _apiBaseUrl => '${AppConfig.apiBaseUrl}/api/v1';
 
 enum NetworkStatus {
   online,
@@ -37,7 +44,7 @@ class NetworkService {
   
   Dio _createDio() {
     final dio = Dio(BaseOptions(
-      baseUrl: 'http://localhost:4000/api/v1',
+      baseUrl: _apiBaseUrl,
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 30),
       sendTimeout: const Duration(seconds: 30),
@@ -120,7 +127,7 @@ class _AuthInterceptor extends Interceptor {
         // Call refresh endpoint
         final dio = Dio();
         final response = await dio.post(
-          'http://localhost:4000/api/v1/auth/refresh',
+          '$_apiBaseUrl/auth/refresh',
           data: {'refresh_token': refreshToken},
         );
         return response.data as Map<String, String>;
