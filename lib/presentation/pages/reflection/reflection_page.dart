@@ -4,7 +4,9 @@
 // 用户操作≤10秒：选情绪 → 可选写一句话 → 记录
 // 情绪：😊😌😢😰 | GentleButton | 跳过今天
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../../data/network/api_client.dart';
 import '../../../core/theme/shunshi_colors.dart';
 import '../../../core/theme/shunshi_spacing.dart';
 import '../../../core/theme/shunshi_text_styles.dart';
@@ -77,14 +79,49 @@ class _ReflectionPageState extends State<ReflectionPage> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_selectedMood == null) return;
+  bool _saving = false;
+
+  /// 提交反思记录。
+  ///
+  /// 此前这里只是 `setState(_submitted = true)` 就直接展示成功页，
+  /// 用户写的内容从未离开设备。现改为真实提交，失败时明确提示并保留输入，
+  /// 不再谎报成功。
+  Future<void> _submit() async {
+    if (_selectedMood == null || _saving) return;
+
+    setState(() => _saving = true);
+
+    var ok = false;
+    try {
+      final response = await ApiClient().post(
+        '/api/v1/reflections',
+        data: {
+          'mood': _selectedMood!.name,
+          'question': _todayQuestion,
+          'notes': _notesController.text.trim(),
+          'recorded_at': DateTime.now().toUtc().toIso8601String(),
+        },
+      );
+      final code = response.statusCode ?? 0;
+      ok = code >= 200 && code < 300;
+    } catch (e) {
+      debugPrint('Reflection submit failed: $e');
+    }
+
+    if (!mounted) return;
+
+    if (!ok) {
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('保存失败，请检查网络后重试')),
+      );
+      return;
+    }
 
     setState(() {
+      _saving = false;
       _submitted = true;
     });
-
-    // TODO: 调用provider保存数据
 
     // 2秒后重置
     Future.delayed(const Duration(milliseconds: 2000), () {
@@ -99,7 +136,7 @@ class _ReflectionPageState extends State<ReflectionPage> {
   }
 
   void _skip() {
-    // TODO: 记录跳过
+    // 跳过为纯本地行为，无需上报
     Navigator.of(context).maybePop();
   }
 

@@ -31,6 +31,20 @@ class NetworkService {
   // Network status stream
   final _statusController = StreamController<NetworkStatus>.broadcast();
   Stream<NetworkStatus> get statusStream => _statusController.stream;
+
+  /// 登录态失效广播。
+  ///
+  /// token 刷新失败时清了本地令牌，但此前没有任何机制告诉 UI ——
+  /// 用户会停在一个看似已登录、实则每个请求都 401 的界面上。
+  /// 上层订阅本流后应跳转登录页。
+  final _unauthorizedController = StreamController<void>.broadcast();
+  Stream<void> get unauthorizedStream => _unauthorizedController.stream;
+
+  void notifyUnauthorized() {
+    if (!_unauthorizedController.isClosed) {
+      _unauthorizedController.add(null);
+    }
+  }
   
   NetworkStatus _currentStatus = NetworkStatus.unknown;
   NetworkStatus get currentStatus => _currentStatus;
@@ -103,6 +117,7 @@ class NetworkService {
   
   void dispose() {
     _statusController.close();
+    _unauthorizedController.close();
   }
 }
 
@@ -119,26 +134,36 @@ class _AuthInterceptor extends Interceptor {
     handler.next(options);
   }
   
+  /// 刷新接口自身返回的 401 不能再触发刷新，否则会无限递归。
+  static bool _isRefreshCall(RequestOptions options) =>
+      options.path.contains('/auth/refresh');
+
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
+    if (err.response?.statusCode == 401 && !_isRefreshCall(err.requestOptions)) {
       // Token expired, try to refresh
       final refreshed = await tokenStorage.refreshToken((refreshToken) async {
-        // Call refresh endpoint
+        // 刷新请求用**干净的** Dio：不带 _AuthInterceptor，
+        // 否则它会给刷新请求也塞上已过期的 Authorization 头，
+        // 并在刷新本身 401 时再次进入本分支。
         final dio = Dio();
         final response = await dio.post(
           '$_apiBaseUrl/auth/refresh',
           data: {'refresh_token': refreshToken},
         );
-        return response.data as Map<String, String>;
+        // 原来写的是 `as Map<String, String>` —— JSON 解出来是
+        // Map<String, dynamic>，这个转换**必然抛 TypeError**，
+        // 被 refreshToken 的 catch 吞掉后一律当刷新失败。
+        // 也就是说自动续期从来没成功过。
+        return Map<String, dynamic>.from(response.data as Map);
       });
-      
+
       if (refreshed) {
         // Retry the original request
         try {
           final token = await tokenStorage.getAccessToken();
           err.requestOptions.headers['Authorization'] = 'Bearer $token';
-          
+
           final dio = Dio();
           final response = await dio.fetch(err.requestOptions);
           return handler.resolve(response);
@@ -146,8 +171,11 @@ class _AuthInterceptor extends Interceptor {
           return handler.next(err);
         }
       } else {
-        // Refresh failed, clear tokens
+        // 刷新失败：清 token 之外还要广播登出。
+        // 原实现只 clearTokens()，UI 层无从知晓 —— 用户会停在一个
+        // 看似已登录、但每个请求都 401 的界面上，只能靠杀进程恢复。
         await tokenStorage.clearTokens();
+        NetworkService().notifyUnauthorized();
       }
     }
     handler.next(err);

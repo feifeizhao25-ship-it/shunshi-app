@@ -1,6 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../data/network/api_client.dart';
+
 /// 反馈服务
+///
+/// 修复说明：此前两个方法都只是 `await Future.delayed(1s)` 然后 `return true`，
+/// 用户看到"感谢您的反馈！"但内容从未离开设备。现改为真实提交；
+/// 失败返回 false，由 UI 展示"提交失败，请重试"。
 class FeedbackService {
   /// 提交反馈
   static Future<bool> submitFeedback({
@@ -8,24 +15,46 @@ class FeedbackService {
     String? contact,
     List<String>? screenshots,
   }) async {
-    // TODO: 连接到真实 API
-    // 模拟提交
-    await Future.delayed(const Duration(seconds: 1));
-    
-    // 保存到本地存储 (离线支持)
-    // await StorageManager.feedback.saveFeedback(...);
-    
-    return true;
+    try {
+      final response = await ApiClient().post(
+        '/api/v1/feedback',
+        data: {
+          'content': content,
+          if (contact != null && contact.isNotEmpty) 'contact': contact,
+          if (screenshots != null && screenshots.isNotEmpty)
+            'screenshots': screenshots,
+        },
+      );
+      final code = response.statusCode ?? 0;
+      return code >= 200 && code < 300;
+    } catch (e) {
+      debugPrint('Feedback submit failed: $e');
+      return false;
+    }
   }
-  
-  /// 评价 App
+
+  /// 提交应用评分
+  ///
+  /// 注意：这里只把评分回传自有后端。跳转 App Store / Play Store
+  /// 需要接入 in_app_review 之类的插件，属于独立工作项。
   static Future<bool> rateApp({
     required int rating,
     String? comment,
   }) async {
-    // TODO: 连接到 App Store / Play Store
-    await Future.delayed(const Duration(seconds: 1));
-    return true;
+    try {
+      final response = await ApiClient().post(
+        '/api/v1/feedback/rating',
+        data: {
+          'rating': rating,
+          if (comment != null && comment.isNotEmpty) 'comment': comment,
+        },
+      );
+      final code = response.statusCode ?? 0;
+      return code >= 200 && code < 300;
+    } catch (e) {
+      debugPrint('Rating submit failed: $e');
+      return false;
+    }
   }
 }
 
@@ -192,18 +221,19 @@ class _RateAppDialogState extends State<RateAppDialog> {
   
   Future<void> _submit() async {
     setState(() => _isSubmitting = true);
-    
-    await FeedbackService.rateApp(
+
+    final success = await FeedbackService.rateApp(
       rating: _rating,
       comment: _commentController.text.isEmpty ? null : _commentController.text,
     );
-    
+
     setState(() => _isSubmitting = false);
-    
+
     if (mounted) {
       Navigator.pop(context);
+      // 此前无论成功与否都提示"感谢您的评价!"
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('感谢您的评价!')),
+        SnackBar(content: Text(success ? '感谢您的评价!' : '提交失败，请重试')),
       );
     }
   }

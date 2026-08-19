@@ -63,3 +63,22 @@ build/app/
 *.keystore
 android/key.properties
 ios/ExportOptions.plist
+
+# ── 环境变量与凭证（此前完全没有覆盖） ──
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# 第三方服务配置（含 API key，不应入库）
+google-services.json
+GoogleService-Info.plist
+firebase-adminsdk*.json
+*.p8
+*.p12
+*.mobileprovision
+
+# 本地数据库
+*.db
+*.sqlite
+*.sqlite3

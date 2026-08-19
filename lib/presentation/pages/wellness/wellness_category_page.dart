@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
 import '../../../data/network/api_client.dart';
 import '../../../design_system/theme.dart';
 import '../../../core/theme/wellness_assets.dart';
@@ -38,13 +37,10 @@ class _WellnessCategoryPageState extends State<WellnessCategoryPage> {
 
   Future<void> _loadData() async {
     try {
-      final dio = Dio(BaseOptions(
-        baseUrl: ApiClient.baseUrl,
-        headers: {'ngrok-skip-browser-warning': 'true'},
-        connectTimeout: const Duration(seconds: 5),
-        receiveTimeout: const Duration(seconds: 10),
-      ));
-      final resp = await dio.get('/api/v1/contents', queryParameters: {
+      // 改用 ApiClient：自建裸 Dio 会绕过 _AuthInterceptor，请求不带 token。
+      // 同时移除 'ngrok-skip-browser-warning' —— 那是开发期内网穿透的残留，
+      // 不该出现在发布版本里。
+      final resp = await ApiClient().get('/api/v1/contents', queryParameters: {
         'type': widget.type,
         'limit': 50,
       });
@@ -57,6 +53,9 @@ class _WellnessCategoryPageState extends State<WellnessCategoryPage> {
           _items = items.map((e) => e as Map<String, dynamic>).toList();
           _loading = false;
         });
+      } else if (mounted) {
+        // 非 200 此前不会退出 loading 态，页面会一直转圈
+        setState(() { _loading = false; _error = '加载失败，请稍后重试'; });
       }
     } catch (e) {
       if (mounted) setState(() { _loading = false; _error = '加载失败，请检查网络'; });

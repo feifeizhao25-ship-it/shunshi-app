@@ -179,6 +179,41 @@ class _RecordsPageState extends State<RecordsPage>
 // 情绪 Tab
 // ═══════════════════════════════════════════
 
+/// 记录页各 Tab 的统一空态。
+///
+/// 四个 Tab 此前都无保护地调用 `records.last`，因此只能靠硬编码的
+/// 7 天假数据把列表填满才不会崩。补上空态后，才具备接真实接口的前提。
+class _RecordsEmptyState extends StatelessWidget {
+  final String hint;
+
+  const _RecordsEmptyState({required this.hint});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.edit_note_outlined,
+              size: 44,
+              color: Color(0xFFBDB8B0),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              hint,
+              textAlign: TextAlign.center,
+              style: ShunshiTextStyles.caption,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _MoodTab extends StatefulWidget {
   final List<_MoodRecord> records;
   const _MoodTab({required this.records});
@@ -242,6 +277,12 @@ class _MoodTabState extends State<_MoodTab> {
 
   @override
   Widget build(BuildContext context) {
+    // 无记录时直接返回空态。此前 records.last 无保护，
+    // 一旦传入空列表就会抛 "Bad state: No element" 导致整页崩溃——
+    // 这也是当前只能用假数据填充的原因之一。
+    if (widget.records.isEmpty) {
+      return const _RecordsEmptyState(hint: '还没有情绪记录，从下方记录今天的心情吧');
+    }
     final values = widget.records.map((r) => r.value).toList();
     final labels = widget.records.map((r) => r.date).toList();
     final today = widget.records.last;
@@ -472,6 +513,9 @@ class _SleepTabState extends State<_SleepTab> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.records.isEmpty) {
+      return const _RecordsEmptyState(hint: '还没有睡眠记录，从下方记录昨晚的睡眠吧');
+    }
     final values = widget.records.map((r) => r.hours).toList();
     final labels = widget.records.map((r) => r.date).toList();
     final last = widget.records.last;
@@ -693,6 +737,9 @@ class _ExerciseTabState extends State<_ExerciseTab> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.records.isEmpty) {
+      return const _RecordsEmptyState(hint: '还没有运动记录，从下方记录今天的活动吧');
+    }
     final values = widget.records.map((r) => r.minutes.toDouble()).toList();
     final labels = widget.records.map((r) => r.date).toList();
     final last = widget.records.last;
@@ -971,6 +1018,9 @@ class _DietTabState extends State<_DietTab> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.records.isEmpty) {
+      return const _RecordsEmptyState(hint: '还没有饮食记录，从下方记录今天的饮食吧');
+    }
     final values = widget.records.map((r) => r.score.toDouble()).toList();
     final labels = widget.records.map((r) => r.date).toList();
     final last = widget.records.last;

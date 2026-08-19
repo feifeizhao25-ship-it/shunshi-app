@@ -38,8 +38,12 @@ class ShunshiApp extends StatelessWidget {
       title: '顺时 ShunShi',
       debugShowCheckedModeBanner: false,
       theme: ShunShiTheme.lightTheme,
-      darkTheme: ShunShiTheme.lightTheme, // TODO: 添加 ShunShiTheme.darkTheme
-      themeMode: ThemeMode.system,
+      // ShunShiTheme 目前只有浅色主题。此前把 darkTheme 也指向 lightTheme
+      // 并设 themeMode: system —— 效果是系统开启深色模式时仍显示浅色，
+      // 但 Flutter 会认为 App 支持深色，导致状态栏/系统控件按深色渲染，
+      // 与页面浅色背景冲突。
+      // 在补齐真正的深色主题之前，明确声明本 App 仅支持浅色。
+      themeMode: ThemeMode.light,
     );
   }
 }

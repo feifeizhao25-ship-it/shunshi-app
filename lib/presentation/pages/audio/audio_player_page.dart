@@ -1,7 +1,6 @@
 import 'package:just_audio/just_audio.dart';
 import '../../../data/network/api_client.dart';
 import 'dart:async';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import '../../../core/theme/shunshi_colors.dart';
 import '../../../core/theme/shunshi_spacing.dart';
@@ -55,10 +54,11 @@ class _AudioPlayerPageState extends State<AudioPlayerPage>
   bool _isPremium = false;
   String? _audioUrl;
 
-  final _dio = Dio(BaseOptions(
-    baseUrl: ApiClient.baseUrl,
-    connectTimeout: const Duration(seconds: 10),
-  ));
+  // 改用 ApiClient：它带 _AuthInterceptor，会自动附上 Bearer token。
+  // 此前这里自建裸 Dio，绕过了认证，所以才被迫在请求体里手写 user_id ——
+  // 而客户端自报 user_id 意味着任何人都能替别人上报收听进度。
+  // 现在身份由服务端从 token 解析，请求体不再携带 user_id。
+  final _api = ApiClient();
 
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration?>? _durationSub;
@@ -113,7 +113,7 @@ class _AudioPlayerPageState extends State<AudioPlayerPage>
 
   Future<void> _loadAudioFromId() async {
     try {
-      final response = await _dio.get('/api/v1/seasons/audio/${widget.audioId}');
+      final response = await _api.get('/api/v1/seasons/audio/${widget.audioId}');
       if (response.statusCode == 200 && mounted) {
         final data = response.data as Map<String, dynamic>;
         final audioUrl = data['audio_url'] as String?;
@@ -153,11 +153,10 @@ class _AudioPlayerPageState extends State<AudioPlayerPage>
 
   Future<void> _onCompleted() async {
     try {
-      await _dio.post(
+      await _api.post(
         '/api/v1/seasons/audio/progress',
         data: {
           'audio_id': widget.audioId ?? '',
-          'user_id': 'current_user', // TODO: 从认证模块获取
           'progress_seconds': _duration.inSeconds,
           'completed': true,
         },
@@ -167,11 +166,10 @@ class _AudioPlayerPageState extends State<AudioPlayerPage>
 
   Future<void> _reportProgress() async {
     try {
-      await _dio.post(
+      await _api.post(
         '/api/v1/seasons/audio/progress',
         data: {
           'audio_id': widget.audioId ?? '',
-          'user_id': 'current_user',
           'progress_seconds': _position.inSeconds,
           'completed': false,
         },

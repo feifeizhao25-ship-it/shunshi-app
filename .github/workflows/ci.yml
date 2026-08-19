@@ -40,3 +40,28 @@ jobs:
         run: >-
           flutter build apk --release
           --dart-define=SHUNSHI_API_BASE_URL=https://ci.invalid
+
+  release-build-guard:
+    name: Release build must fail without API base URL
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.38.5
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      # 回归保护：AppConfig 在 kReleaseMode 下缺 SHUNSHI_API_BASE_URL 会抛错，
+      # 但这条约束曾被绕过 —— network_service.dart 自建 Dio 时直接硬编码
+      # 'http://localhost:4000/api/v1'，上架包因此连不上任何后端。
+      # 上面的 job 总是带 --dart-define，无法暴露此类绕过；
+      # 这里反过来验证「不给该变量时 release 构建必须失败」。
+      - name: Expect failure when SHUNSHI_API_BASE_URL is absent
+        run: |
+          if flutter build web --release; then
+            echo "::error::Release build succeeded without SHUNSHI_API_BASE_URL — 说明存在绕过 AppConfig 的硬编码地址"
+            exit 1
+          fi
+          echo "OK: release build correctly rejected missing SHUNSHI_API_BASE_URL"
