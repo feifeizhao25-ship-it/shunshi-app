@@ -737,9 +737,9 @@ class _ProfilePageState extends State<ProfilePage> {
     } catch (_) {
       if (!mounted) return;
       setState(() => _memoryEnabled = previous);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('设置失败，请检查网络后重试')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('设置失败，请检查网络后重试')));
     }
   }
 
@@ -920,7 +920,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _handleRestorePurchase(BuildContext context) async {
     final store = StoreService();
     if (!await store.initialize()) {
-      if (mounted) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('当前设备不支持应用内购'),
@@ -930,6 +930,7 @@ class _ProfilePageState extends State<ProfilePage> {
       }
       return;
     }
+    if (!context.mounted) return;
 
     showDialog(
       context: context,
@@ -944,7 +945,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
     try {
       await store.restorePurchases();
-      if (mounted) {
+      if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -955,7 +956,7 @@ class _ProfilePageState extends State<ProfilePage> {
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

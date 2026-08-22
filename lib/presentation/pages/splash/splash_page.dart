@@ -45,10 +45,7 @@ class _SplashPageState extends State<SplashPage>
 
     // 呼吸缩放 0.95 → 1.05（品牌特色）
     _breathAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOutSine,
-      ),
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
     );
 
     _controller.forward();
@@ -57,6 +54,7 @@ class _SplashPageState extends State<SplashPage>
     Future.delayed(const Duration(milliseconds: 1500), () async {
       if (!mounted) return;
       final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
       final onboardingCompleted =
           prefs.getBool('onboarding_completed') ?? false;
       if (onboardingCompleted) {
@@ -77,12 +75,15 @@ class _SplashPageState extends State<SplashPage>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = isDark ? ShunshiDarkColors.primary : ShunshiColors.primary;
-    final primaryLight =
-        isDark ? ShunshiDarkColors.primaryLight : ShunshiColors.primaryLight;
-    final textPrimary =
-        isDark ? ShunshiDarkColors.textPrimary : ShunshiColors.textPrimary;
-    final textSecondary =
-        isDark ? ShunshiDarkColors.textSecondary : ShunshiColors.textSecondary;
+    final primaryLight = isDark
+        ? ShunshiDarkColors.primaryLight
+        : ShunshiColors.primaryLight;
+    final textPrimary = isDark
+        ? ShunshiDarkColors.textPrimary
+        : ShunshiColors.textPrimary;
+    final textSecondary = isDark
+        ? ShunshiDarkColors.textSecondary
+        : ShunshiColors.textSecondary;
     final bg = isDark ? ShunshiDarkColors.background : ShunshiColors.background;
 
     return Scaffold(
@@ -93,10 +94,7 @@ class _SplashPageState extends State<SplashPage>
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              bg,
-              primaryLight.withValues(alpha: 0.15),
-            ],
+            colors: [bg, primaryLight.withValues(alpha: 0.15)],
           ),
         ),
         child: AnimatedBuilder(

@@ -315,7 +315,9 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
   Future<void> _handleSubscribe() async {
     setState(() => _isPurchasing = true);
     try {
-      await StoreService().purchaseSubscription(_plans[_selectedIndex].productId);
+      await StoreService().purchaseSubscription(
+        _plans[_selectedIndex].productId,
+      );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -332,15 +334,15 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   Future<void> _handleRestorePurchase() async {
     final store = StoreService();
-    if (!await store.initialize()) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('当前设备不支持应用内购'),
-            backgroundColor: ShunshiColors.textSecondary,
-          ),
-        );
-      }
+    final initialized = await store.initialize();
+    if (!mounted) return;
+    if (!initialized) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('当前设备不支持应用内购'),
+          backgroundColor: ShunshiColors.textSecondary,
+        ),
+      );
       return;
     }
 
@@ -357,26 +359,24 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
     try {
       await store.restorePurchases();
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('正在恢复购买，请稍候...'),
-            duration: Duration(seconds: 3),
-            backgroundColor: ShunshiColors.primary,
-          ),
-        );
-      }
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('正在恢复购买，请稍候...'),
+          duration: Duration(seconds: 3),
+          backgroundColor: ShunshiColors.primary,
+        ),
+      );
     } catch (e) {
-      if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('恢复购买失败: $e'),
-            backgroundColor: ShunshiColors.error,
-          ),
-        );
-      }
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('恢复购买失败: $e'),
+          backgroundColor: ShunshiColors.error,
+        ),
+      );
     }
   }
 }
