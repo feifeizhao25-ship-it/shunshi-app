@@ -63,7 +63,15 @@ class ShunShiRouter {
       );
 
       // 4. 解析响应
-      final parsedResponse = _parseResponse(llmResponse, taskType);
+      var parsedResponse = _parseResponse(llmResponse, taskType);
+
+      // 4.1 医疗主题命中：把就医提示标记附加到最终响应，不得在链路中丢失
+      if (safetyResult.needsDoctorConsult) {
+        parsedResponse = parsedResponse.copyWithSafety(
+          safetyFlag: safetyResult.flag,
+          needsDoctorConsult: true,
+        );
+      }
 
       // 5. 统计
       _recordStats(promptResult, startTime);
@@ -158,6 +166,7 @@ class ShunShiRouter {
       tone: 'gentle',
       careStatus: result.needsDoctorConsult ? 'concerned' : 'stable',
       safetyFlag: result.flag,
+      needsDoctorConsult: result.needsDoctorConsult,
       presenceLevel: 'low',
     );
   }

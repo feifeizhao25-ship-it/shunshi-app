@@ -90,7 +90,17 @@ class ContentDetail {
 class ContentDetailPage extends StatefulWidget {
   final String contentId;
 
-  const ContentDetailPage({super.key, required this.contentId});
+  /// 调用方已持有的本地内容（如养生内容库的打包条目）。
+  ///
+  /// 提供后，API 加载失败时回退展示本地内容而不是错误页 ——
+  /// 这些内容本就随应用打包，不依赖后端是否存在。
+  final ContentDetail? fallbackContent;
+
+  const ContentDetailPage({
+    super.key,
+    required this.contentId,
+    this.fallbackContent,
+  });
 
   @override
   State<ContentDetailPage> createState() => _ContentDetailPageState();
@@ -159,14 +169,25 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
           _isLoading = false;
         });
       } else {
-        setState(() {
-          _errorMessage = '未找到内容';
-          _isLoading = false;
-        });
+        _showFallbackOrError('未找到内容');
       }
     } catch (e) {
+      _showFallbackOrError('加载失败，请稍后重试');
+    }
+  }
+
+  /// API 不可用时回退到调用方传入的本地内容；没有本地内容才显示错误。
+  void _showFallbackOrError(String errorMessage) {
+    final fallback = widget.fallbackContent;
+    if (fallback != null) {
       setState(() {
-        _errorMessage = '加载失败，请稍后重试';
+        _content = fallback;
+        _isLiked = fallback.isLiked;
+        _isLoading = false;
+      });
+    } else {
+      setState(() {
+        _errorMessage = errorMessage;
         _isLoading = false;
       });
     }

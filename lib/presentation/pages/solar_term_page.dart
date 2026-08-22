@@ -6,6 +6,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/theme/shunshi_colors.dart';
 import '../../core/theme/shunshi_spacing.dart';
@@ -40,6 +41,14 @@ class SolarTermData {
     required this.sleepAdvice,
     this.recommendations = const [],
   });
+
+  /// 当前节气 — 按公历日期从节气表推算，两个节气约各占半月。
+  static SolarTermData current([DateTime? now]) {
+    final date = now ?? DateTime.now();
+    final terms = all();
+    final termIndex = ((date.month - 2) * 2 + date.day ~/ 15) % 24;
+    return terms[termIndex.clamp(0, terms.length - 1)];
+  }
 
   static List<SolarTermData> all() => [
         const SolarTermData(
@@ -80,6 +89,19 @@ class SolarTermData {
           exerciseAdvice: ['户外散步', '拉伸运动'],
           sleepAdvice: ['23点前入睡', '早起锻炼'],
           recommendations: ['春季养肝食谱', '晨起拉伸15分钟', '菊花枸杞茶'],
+        ),
+        const SolarTermData(
+          name: '春分',
+          date: '三月二十一日',
+          season: 'spring',
+          emoji: '🌸',
+          description: '春分昼夜均分，阴阳平衡。宜平和饮食，调畅情志。',
+          healthTips: ['平和饮食', '调畅情志'],
+          dietaryAdvice: ['春笋', '菠菜', '荠菜'],
+          teaRecommendations: ['菊花茶', '玫瑰花茶'],
+          exerciseAdvice: ['踏青散步', '放风筝'],
+          sleepAdvice: ['早睡早起', '午间小憩'],
+          recommendations: ['春分平衡养生', '春季情志调理', '春日花茶推荐'],
         ),
         const SolarTermData(
           name: '清明',
@@ -145,6 +167,19 @@ class SolarTermData {
           exerciseAdvice: ['游泳', '太极'],
           sleepAdvice: ['晚睡早起', '补充午休'],
           recommendations: ['消暑养生食谱', '夏季护肤茶饮', '芒种运动推荐'],
+        ),
+        const SolarTermData(
+          name: '夏至',
+          date: '六月二十一日',
+          season: 'summer',
+          emoji: '🌞',
+          description: '夏至阳气至极，白昼最长。宜养心安神，清热生津。',
+          healthTips: ['养心安神', '清热生津'],
+          dietaryAdvice: ['绿豆', '西瓜', '苦瓜'],
+          teaRecommendations: ['绿茶', '荷叶茶'],
+          exerciseAdvice: ['清晨散步', '游泳'],
+          sleepAdvice: ['晚睡早起', '午睡养心'],
+          recommendations: ['夏至养心食谱', '清热生津茶饮', '夏季午休指南'],
         ),
         const SolarTermData(
           name: '小暑',
@@ -388,13 +423,7 @@ class SolarTermPage extends ConsumerStatefulWidget {
 }
 
 class _SolarTermPageState extends ConsumerState<SolarTermPage> {
-  SolarTermData _getCurrentSolarTerm() {
-    final now = DateTime.now();
-    final terms = SolarTermData.all();
-    final monthIndex = now.month;
-    final termIndex = ((monthIndex - 2) * 2 + now.day ~/ 15) % 24;
-    return terms[termIndex.clamp(0, terms.length - 1)];
-  }
+  SolarTermData _getCurrentSolarTerm() => SolarTermData.current();
 
   @override
   Widget build(BuildContext context) {
@@ -675,7 +704,7 @@ class _RecommendSection extends StatelessWidget {
                     borderRadius: ShunshiSpacing.radiusLarge,
                     padding: const EdgeInsets.all(20),
                     onTap: () {
-                      // TODO: 导航到详情页
+                      context.go('/library');
                     },
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

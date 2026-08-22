@@ -1,8 +1,6 @@
-// 视频播放器组件
-// TODO: 添加 video_player 依赖后启用完整功能
-// flutter pub add video_player
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:video_player/video_player.dart' as vp;
 
 /// 视频播放器状态
 enum VideoPlayerState {
@@ -16,9 +14,8 @@ enum VideoPlayerState {
 
 /// 视频播放器 Controller (ChangeNotifier wrapper)
 /// 
-/// 当添加 video_player 包后，此处内部的 [_innerController] 应替换为
-/// package:video_player 中的 VideoPlayerController。
 class VideoPlayerController extends ChangeNotifier {
+  vp.VideoPlayerController? _innerController;
   VideoPlayerState _state = VideoPlayerState.idle;
   String? _errorMessage;
   Duration _position = Duration.zero;
@@ -32,6 +29,7 @@ class VideoPlayerController extends ChangeNotifier {
   Duration get duration => _duration;
   bool get isPlaying => _isPlaying;
   bool get isFullScreen => _isFullScreen;
+  vp.VideoPlayerController? get innerController => _innerController;
   bool get isInitialized => _state != VideoPlayerState.idle && _state != VideoPlayerState.loading && _state != VideoPlayerState.error;
   double get progress => _duration.inMilliseconds > 0 
       ? _position.inMilliseconds / _duration.inMilliseconds 
@@ -44,11 +42,14 @@ class VideoPlayerController extends ChangeNotifier {
     notifyListeners();
     
     try {
-      // TODO: 替换为真正的视频初始化
-      // _innerController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
-      // await _innerController!.initialize();
-      
-      _duration = Duration.zero;
+      final uri = Uri.parse(videoUrl);
+      if (!uri.hasScheme || (uri.scheme != 'https' && uri.scheme != 'http')) {
+        throw const FormatException('视频地址必须使用 HTTP 或 HTTPS');
+      }
+      _innerController = vp.VideoPlayerController.networkUrl(uri);
+      await _innerController!.initialize();
+      _innerController!.addListener(_syncFromPlayer);
+      _duration = _innerController!.value.duration;
       _state = VideoPlayerState.paused;
       notifyListeners();
     } catch (e) {
@@ -60,6 +61,8 @@ class VideoPlayerController extends ChangeNotifier {
   
   /// 播放
   Future<void> play() async {
+    if (_innerController == null || !_innerController!.value.isInitialized) return;
+    await _innerController!.play();
     _isPlaying = true;
     _state = VideoPlayerState.playing;
     notifyListeners();
@@ -67,6 +70,7 @@ class VideoPlayerController extends ChangeNotifier {
   
   /// 暂停
   Future<void> pause() async {
+    await _innerController?.pause();
     _isPlaying = false;
     _state = VideoPlayerState.paused;
     notifyListeners();
@@ -83,6 +87,7 @@ class VideoPlayerController extends ChangeNotifier {
   
   /// 跳转到指定位置
   Future<void> seekTo(Duration position) async {
+    await _innerController?.seekTo(position);
     _position = position;
     notifyListeners();
   }
@@ -99,6 +104,30 @@ class VideoPlayerController extends ChangeNotifier {
   void toggleFullScreen() {
     _isFullScreen = !_isFullScreen;
     notifyListeners();
+  }
+
+  void _syncFromPlayer() {
+    final value = _innerController?.value;
+    if (value == null) return;
+    _position = value.position;
+    _duration = value.duration;
+    _isPlaying = value.isPlaying;
+    if (value.hasError) {
+      _state = VideoPlayerState.error;
+      _errorMessage = value.errorDescription;
+    } else if (value.isCompleted) {
+      _state = VideoPlayerState.completed;
+    } else {
+      _state = value.isPlaying ? VideoPlayerState.playing : VideoPlayerState.paused;
+    }
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _innerController?.removeListener(_syncFromPlayer);
+    _innerController?.dispose();
+    super.dispose();
   }
 }
 
@@ -143,13 +172,8 @@ class ShunshiVideoPlayer extends ConsumerWidget {
           alignment: Alignment.center,
           children: [
             // 视频内容区域
-            if (controller.isInitialized)
-              const Center(
-                child: Text(
-                  '视频播放 (需安装 video_player)',
-                  style: TextStyle(color: Colors.white54),
-                ),
-              )
+            if (controller.isInitialized && controller.innerController != null)
+              vp.VideoPlayer(controller.innerController!)
             else if (thumbnailUrl != null)
               Image.network(
                 thumbnailUrl!,

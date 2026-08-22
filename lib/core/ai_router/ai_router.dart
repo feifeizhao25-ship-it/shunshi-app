@@ -35,6 +35,7 @@ class AIRouter {
         tone: 'gentle',
         careStatus: 'stable',
         safetyFlag: 'blocked',
+        needsDoctorConsult: safetyResult.needsDoctorConsult,
         presenceLevel: 'normal',
       );
     }
@@ -49,7 +50,15 @@ class AIRouter {
     final llmResponse = await _callBackend(model, prompt, request);
 
     // 5. JSON Schema 校验与解析
-    final parsed = _parseResponse(llmResponse, request.expectedSchema);
+    var parsed = _parseResponse(llmResponse, request.expectedSchema);
+
+    // 5.1 医疗主题命中：把就医提示标记附加到最终响应，不得在链路中丢失
+    if (safetyResult.needsDoctorConsult) {
+      parsed = parsed.copyWithSafety(
+        safetyFlag: safetyResult.flag,
+        needsDoctorConsult: true,
+      );
+    }
 
     // 6. 日志记录
     await _logRequest(request, model, llmResponse, parsed);

@@ -56,6 +56,7 @@ class AIResponse {
   final bool offlineEncouraged;
   final String presenceLevel;
   final String safetyFlag;
+  final bool needsDoctorConsult;
   final List<String>? suggestedActions;
 
   const AIResponse({
@@ -66,6 +67,7 @@ class AIResponse {
     this.offlineEncouraged = false,
     this.presenceLevel = 'normal',
     this.safetyFlag = 'none',
+    this.needsDoctorConsult = false,
     this.suggestedActions,
   });
 
@@ -80,9 +82,25 @@ class AIResponse {
       offlineEncouraged: json['offline_encouraged'] ?? false,
       presenceLevel: json['presence_level'] ?? 'normal',
       safetyFlag: json['safety_flag'] ?? 'none',
+      needsDoctorConsult: json['needs_doctor_consult'] ?? false,
       suggestedActions: json['suggested_actions'] != null
           ? List<String>.from(json['suggested_actions'])
           : null,
+    );
+  }
+
+  /// 复制并覆盖安全标记（用于把客户端检查的医疗标记附加到模型响应上）
+  AIResponse copyWithSafety({String? safetyFlag, bool? needsDoctorConsult}) {
+    return AIResponse(
+      text: text,
+      tone: tone,
+      careStatus: careStatus,
+      followUp: followUp,
+      offlineEncouraged: offlineEncouraged,
+      presenceLevel: presenceLevel,
+      safetyFlag: safetyFlag ?? this.safetyFlag,
+      needsDoctorConsult: needsDoctorConsult ?? this.needsDoctorConsult,
+      suggestedActions: suggestedActions,
     );
   }
 
@@ -94,6 +112,7 @@ class AIResponse {
     'offline_encouraged': offlineEncouraged,
     'presence_level': presenceLevel,
     'safety_flag': safetyFlag,
+    'needs_doctor_consult': needsDoctorConsult,
     'suggested_actions': suggestedActions,
   };
 }

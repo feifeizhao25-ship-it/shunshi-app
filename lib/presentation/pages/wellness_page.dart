@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/shunshi_colors.dart';
 import '../../core/theme/shunshi_spacing.dart';
 import '../../core/theme/shunshi_text_styles.dart';
+import 'content_detail_page.dart';
 
 // ── 内容分类 ──────────────────────────────────────────
 
@@ -392,7 +393,30 @@ class _WellnessPageState extends State<WellnessPage>
   }
 
   void _showDetail(BuildContext context, WellnessItem item) {
-    context.go('/content/${item.title}');
+    // 打包内容自带全部详情，作为 extra 传给详情页；
+    // 后端不可用时详情页直接展示本地内容，而不是必现的"加载失败"。
+    context.go(
+      '/content/${item.title}',
+      extra: ContentDetail(
+        id: item.title,
+        title: item.title,
+        tags: item.tags,
+        ingredients: item.ingredients,
+        steps: item.steps,
+        tip: item.tip,
+        duration: item.duration.isEmpty ? null : item.duration,
+        difficulty: item.difficulty.isEmpty ? null : item.difficulty,
+        emoji: item.emoji,
+        type: _detailTypeFor(item.category),
+      ),
+    );
+  }
+
+  static ContentDetailType _detailTypeFor(String category) {
+    for (final type in ContentDetailType.values) {
+      if (type.name == category) return type;
+    }
+    return ContentDetailType.food;
   }
 }
 

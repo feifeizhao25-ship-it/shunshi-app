@@ -26,6 +26,11 @@ router_files = "\n".join(
         read("lib/core/config/models.dart"),
     ]
 )
+runtime_dart = "\n".join(
+    path.read_text(encoding="utf-8")
+    for path in (ROOT / "lib").rglob("*.dart")
+)
+records_page = read("lib/presentation/pages/records/records_page.dart")
 
 if "SHUNSHI_API_BASE_URL" not in app_config or "kReleaseMode" not in app_config:
     errors.append("release API URL is not fail-closed")
@@ -55,6 +60,13 @@ if re.search(r"Authorization['\"]?\s*:\s*['\"]Bearer\s*\$\{[^}]*apiKey", router_
     errors.append("provider API key is sent from the mobile client")
 if "final String apiKey" in router_files:
     errors.append("provider API key remains in a mobile client config model")
+if "demo_user" in runtime_dart:
+    errors.append("production runtime still falls back to a shared demo identity")
+for fabricated_marker in ("模拟7天", "工作顺利", "和朋友聚餐", "完成了项目"):
+    if fabricated_marker in records_page:
+        errors.append(f"health records page contains fabricated user data: {fabricated_marker}")
+if "HealthRecordStorage" not in records_page or "SharedPreferences" in records_page:
+    errors.append("health journal is not persisted using encrypted local storage")
 
 if errors:
     print("ShunShi production release gate: FAIL")

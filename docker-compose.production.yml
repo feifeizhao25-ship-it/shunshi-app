@@ -1,0 +1,28 @@
+services:
+  api:
+    build: ./backend
+    env_file: .env.production
+    volumes:
+      - shunshi_data:/data
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        SHUNSHI_API_BASE_URL: ${SHUNSHI_API_BASE_URL:?required}
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/var/cache/nginx, /var/run]
+    security_opt: [no-new-privileges:true]
+    ports:
+      - "${SHUNSHI_WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  shunshi_data:
+

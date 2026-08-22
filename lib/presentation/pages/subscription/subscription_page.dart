@@ -16,6 +16,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
   final _plans = [
     _PlanData(
+      productId: 'shunshi_yangxin_monthly',
       name: '养心计划',
       price: '¥29.9',
       period: '月',
@@ -24,6 +25,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       color: ShunshiColors.primary,
     ),
     _PlanData(
+      productId: 'shunshi_healing_monthly',
       name: '疗愈计划',
       price: '¥49.9',
       period: '月',
@@ -32,6 +34,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
       color: ShunshiColors.warm,
     ),
     _PlanData(
+      productId: 'shunshi_family_monthly',
       name: '家庭计划',
       price: '¥79.9',
       period: '月',
@@ -159,7 +162,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
               // ── 条款 ──
               Center(
                 child: Text(
-                  '订阅自动续费，可随时取消。购买即表示同意服务条款。',
+                  '订阅自动续费，可在应用商店管理或取消。退款按应用商店规则处理，购买即表示同意服务条款。',
                   textAlign: TextAlign.center,
                   style: ShunshiTextStyles.overline.copyWith(
                     color: _textHint(context),
@@ -309,19 +312,22 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
     );
   }
 
-  void _handleSubscribe() {
+  Future<void> _handleSubscribe() async {
     setState(() => _isPurchasing = true);
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      await StoreService().purchaseSubscription(_plans[_selectedIndex].productId);
+    } catch (error) {
       if (mounted) {
-        setState(() => _isPurchasing = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${_plans[_selectedIndex].name} 即将开放订阅'),
-            backgroundColor: ShunshiColors.primary,
+            content: Text('无法发起订阅：$error'),
+            backgroundColor: ShunshiColors.error,
           ),
         );
       }
-    });
+    } finally {
+      if (mounted) setState(() => _isPurchasing = false);
+    }
   }
 
   Future<void> _handleRestorePurchase() async {
@@ -376,6 +382,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 }
 
 class _PlanData {
+  final String productId;
   final String name;
   final String price;
   final String period;
@@ -384,6 +391,7 @@ class _PlanData {
   final Color color;
 
   const _PlanData({
+    required this.productId,
     required this.name,
     required this.price,
     required this.period,

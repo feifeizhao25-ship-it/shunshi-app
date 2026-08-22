@@ -63,7 +63,11 @@ class AppRouter {
         path: '/content/:id',
         builder: (context, state) {
           final contentId = state.pathParameters['id']!;
-          return ContentDetailPage(contentId: contentId);
+          final extra = state.extra;
+          return ContentDetailPage(
+            contentId: contentId,
+            fallbackContent: extra is ContentDetail ? extra : null,
+          );
         },
       ),
       GoRoute(

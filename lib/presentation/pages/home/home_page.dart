@@ -4,9 +4,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../data/network/api_client.dart';
+import '../../../core/storage/token_storage.dart';
+import '../solar_term_page.dart';
 
 /// 首页
 class HomePage extends ConsumerStatefulWidget {
@@ -40,14 +41,22 @@ class _HomePageState extends ConsumerState<HomePage> {
   Future<void> _loadDailyContent() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userId = prefs.getString('user_id') ?? 'demo_user';
       final hemisphere = prefs.getString('hemisphere') ?? 'north';
+      final accessToken = await tokenStorage.getAccessToken();
+      if (accessToken == null || accessToken.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _loadError = '登录后才能获取你的个性化内容';
+            _isLoading = false;
+          });
+        }
+        return;
+      }
 
       final apiClient = ApiClient();
       final response = await apiClient.get(
         '/api/v1/seasons/home/dashboard',
         queryParameters: {
-          'user_id': userId,
           'hemisphere': hemisphere,
         },
       );
@@ -126,8 +135,10 @@ class _HomePageState extends ConsumerState<HomePage> {
     return '晚安';
   }
 
-  String _getGreetingWithName() {
-    return '${_greeting.isEmpty ? _getGreeting() : _greeting}，feifei';
+  /// 问候语：优先用后端返回的个性化文案，否则按时段生成。
+  /// 此前这里硬编码了 `，feifei` 作为用户名 —— 每个用户都会看到别人的名字。
+  String _getGreetingText() {
+    return _greeting.isEmpty ? _getGreeting() : _greeting;
   }
 
   @override
@@ -236,7 +247,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     return Align(
       alignment: Alignment.centerLeft,
       child: Text(
-        _getGreetingWithName(),
+        _getGreetingText(),
         style: const TextStyle(
           fontSize: 28,
           fontWeight: FontWeight.w300, // 细体
@@ -402,7 +413,15 @@ class _HomePageState extends ConsumerState<HomePage> {
   // 节气卡片 — 轻量
   // ──────────────────────────────────────────────
 
+  // ──────────────────────────────────────────────
+  // 节气卡片 — 按日期推算当前节气
+  //
+  // 此前这里硬编码"惊蛰 · 春始 / 宜：舒展、养肝"，全年不变，
+  // 用户看到的永远是假节气。现改为与节气页一致的本地推算。
+  // ──────────────────────────────────────────────
+
   Widget _buildSolarTermCard() {
+    final term = SolarTermData.current();
     return _SoftCard(
       borderRadius: 16,
       padding: const EdgeInsets.all(20),
@@ -412,13 +431,13 @@ class _HomePageState extends ConsumerState<HomePage> {
           Row(
             children: [
               Text(
-                '🍃',
+                term.emoji,
                 style: const TextStyle(fontSize: 20),
               ),
               const SizedBox(width: 8),
-              const Text(
-                '惊蛰 · 春始',
-                style: TextStyle(
+              Text(
+                '${term.name} · ${term.date}',
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF2C2C2C),
@@ -427,9 +446,9 @@ class _HomePageState extends ConsumerState<HomePage> {
             ],
           ),
           const SizedBox(height: 8),
-          const Text(
-            '宜：舒展、养肝',
-            style: TextStyle(
+          Text(
+            term.healthTips.take(2).join(' · '),
+            style: const TextStyle(
               fontSize: 14,
               color: Color(0xFF9B9B9B),
             ),

@@ -1,10 +1,17 @@
 import 'dart:math';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import '../../../core/storage/health_record_storage.dart';
 import '../../../core/theme/shunshi_colors.dart';
 import '../../../core/theme/shunshi_spacing.dart';
 import '../../../core/theme/shunshi_text_styles.dart';
 import '../../../core/theme/shunshi_animations.dart';
 import '../../widgets/components/components.dart';
+
+String _todayLabel() {
+  final now = DateTime.now();
+  return '${now.month}/${now.day}';
+}
 
 /// 健康记录 — 像写日记，不严肃不复杂
 ///
@@ -23,49 +30,11 @@ class _RecordsPageState extends State<RecordsPage>
   late TabController _tabController;
   int _currentTab = 0;
 
-  // ── 模拟7天情绪数据 ──
-  final List<_MoodRecord> _moodRecords = [
-    _MoodRecord(date: '周一', emoji: '😊', label: '开心', value: 7.0, note: '工作顺利', time: '下午3:20'),
-    _MoodRecord(date: '周二', emoji: '😄', label: '很棒', value: 9.0, note: '和朋友聚餐', time: '晚上8:10'),
-    _MoodRecord(date: '周三', emoji: '😐', label: '一般', value: 5.0, note: '有点累', time: '中午12:30'),
-    _MoodRecord(date: '周四', emoji: '🙂', label: '还行', value: 6.0, note: '', time: '上午10:00'),
-    _MoodRecord(date: '周五', emoji: '😊', label: '开心', value: 8.0, note: '完成了项目', time: '下午5:45'),
-    _MoodRecord(date: '周六', emoji: '😔', label: '低落', value: 3.0, note: '下雨了', time: '下午2:15'),
-    _MoodRecord(date: '今天', emoji: '😊', label: '开心', value: 7.0, note: '', time: null),
-  ];
-
-  // ── 模拟7天睡眠数据 ──
-  final List<_SleepRecord> _sleepRecords = [
-    _SleepRecord(date: '周一', hours: 7.5, quality: _SleepQuality.good, bedtime: '22:30', wakeup: '06:00'),
-    _SleepRecord(date: '周二', hours: 6.0, quality: _SleepQuality.poor, bedtime: '01:00', wakeup: '07:00'),
-    _SleepRecord(date: '周三', hours: 8.0, quality: _SleepQuality.excellent, bedtime: '22:00', wakeup: '06:00'),
-    _SleepRecord(date: '周四', hours: 7.0, quality: _SleepQuality.good, bedtime: '23:00', wakeup: '06:00'),
-    _SleepRecord(date: '周五', hours: 7.5, quality: _SleepQuality.good, bedtime: '22:30', wakeup: '06:00'),
-    _SleepRecord(date: '周六', hours: 5.5, quality: _SleepQuality.fair, bedtime: '00:30', wakeup: '06:00'),
-    _SleepRecord(date: '今天', hours: 8.5, quality: _SleepQuality.excellent, bedtime: '22:00', wakeup: '06:30'),
-  ];
-
-  // ── 模拟7天运动数据 ──
-  final List<_ExerciseRecord> _exerciseRecords = [
-    _ExerciseRecord(date: '周一', minutes: 30, type: '散步', intensity: '轻'),
-    _ExerciseRecord(date: '周二', minutes: 0, type: '', intensity: ''),
-    _ExerciseRecord(date: '周三', minutes: 45, type: '瑜伽', intensity: '中'),
-    _ExerciseRecord(date: '周四', minutes: 20, type: '拉伸', intensity: '轻'),
-    _ExerciseRecord(date: '周五', minutes: 60, type: '跑步', intensity: '高'),
-    _ExerciseRecord(date: '周六', minutes: 15, type: '散步', intensity: '轻'),
-    _ExerciseRecord(date: '今天', minutes: 40, type: '游泳', intensity: '中'),
-  ];
-
-  // ── 模拟7天饮食数据 ──
-  final List<_DietRecord> _dietRecords = [
-    _DietRecord(date: '周一', score: 8, meals: '三餐规律，少油少盐', emoji: '🥗'),
-    _DietRecord(date: '周二', score: 6, meals: '外卖较多', emoji: '🍔'),
-    _DietRecord(date: '周三', score: 9, meals: '自己做饭，营养均衡', emoji: '🍲'),
-    _DietRecord(date: '周四', score: 5, meals: '忘了吃早餐', emoji: '☕'),
-    _DietRecord(date: '周五', score: 8, meals: '水果蔬菜吃得多', emoji: '🍎'),
-    _DietRecord(date: '周六', score: 7, meals: '和朋友聚餐', emoji: '🥘'),
-    _DietRecord(date: '今天', score: 9, meals: '清淡饮食', emoji: '🥬'),
-  ];
+  final List<_MoodRecord> _moodRecords = [];
+  final List<_SleepRecord> _sleepRecords = [];
+  final List<_ExerciseRecord> _exerciseRecords = [];
+  final List<_DietRecord> _dietRecords = [];
+  bool _isLoadingRecords = true;
 
   @override
   void initState() {
@@ -76,6 +45,56 @@ class _RecordsPageState extends State<RecordsPage>
         setState(() => _currentTab = _tabController.index);
       }
     });
+    _loadRecords();
+  }
+
+  Future<void> _loadRecords() async {
+    Future<List<Map<String, dynamic>>> decode(String key) async {
+      final raw = await healthRecordStorage.read(key);
+      if (raw == null || raw.isEmpty) return [];
+      try {
+        return (jsonDecode(raw) as List)
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+      } catch (_) {
+        return [];
+      }
+    }
+
+    final mood = await decode(HealthRecordStorage.moodKey);
+    final sleep = await decode(HealthRecordStorage.sleepKey);
+    final exercise = await decode(HealthRecordStorage.exerciseKey);
+    final diet = await decode(HealthRecordStorage.dietKey);
+    if (!mounted) return;
+    setState(() {
+      _moodRecords.addAll(mood.map(_MoodRecord.fromJson));
+      _sleepRecords.addAll(sleep.map(_SleepRecord.fromJson));
+      _exerciseRecords.addAll(exercise.map(_ExerciseRecord.fromJson));
+      _dietRecords.addAll(diet.map(_DietRecord.fromJson));
+      _isLoadingRecords = false;
+    });
+  }
+
+  Future<void> _persistRecords() async {
+    await Future.wait([
+      healthRecordStorage.write(
+        HealthRecordStorage.moodKey,
+        jsonEncode(_moodRecords.map((e) => e.toJson()).toList()),
+      ),
+      healthRecordStorage.write(
+        HealthRecordStorage.sleepKey,
+        jsonEncode(_sleepRecords.map((e) => e.toJson()).toList()),
+      ),
+      healthRecordStorage.write(
+        HealthRecordStorage.exerciseKey,
+        jsonEncode(_exerciseRecords.map((e) => e.toJson()).toList()),
+      ),
+      healthRecordStorage.write(
+        HealthRecordStorage.dietKey,
+        jsonEncode(_dietRecords.map((e) => e.toJson()).toList()),
+      ),
+    ]);
   }
 
   @override
@@ -94,15 +113,29 @@ class _RecordsPageState extends State<RecordsPage>
             _buildHeader(),
             _buildTabs(),
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _MoodTab(records: _moodRecords),
-                  _SleepTab(records: _sleepRecords),
-                  _ExerciseTab(records: _exerciseRecords),
-                  _DietTab(records: _dietRecords),
-                ],
-              ),
+              child: _isLoadingRecords
+                  ? const Center(child: CircularProgressIndicator())
+                  : TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _MoodTab(
+                          records: _moodRecords,
+                          onChanged: _persistRecords,
+                        ),
+                        _SleepTab(
+                          records: _sleepRecords,
+                          onChanged: _persistRecords,
+                        ),
+                        _ExerciseTab(
+                          records: _exerciseRecords,
+                          onChanged: _persistRecords,
+                        ),
+                        _DietTab(
+                          records: _dietRecords,
+                          onChanged: _persistRecords,
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -135,7 +168,9 @@ class _RecordsPageState extends State<RecordsPage>
   Widget _buildTabs() {
     const tabs = ['情绪', '睡眠', '运动', '饮食'];
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: ShunshiSpacing.pagePadding),
+      padding: const EdgeInsets.symmetric(
+        horizontal: ShunshiSpacing.pagePadding,
+      ),
       child: Row(
         children: List.generate(tabs.length, (i) {
           final isActive = _currentTab == i;
@@ -185,8 +220,14 @@ class _RecordsPageState extends State<RecordsPage>
 /// 7 天假数据把列表填满才不会崩。补上空态后，才具备接真实接口的前提。
 class _RecordsEmptyState extends StatelessWidget {
   final String hint;
+  final String actionLabel;
+  final VoidCallback onStart;
 
-  const _RecordsEmptyState({required this.hint});
+  const _RecordsEmptyState({
+    required this.hint,
+    required this.actionLabel,
+    required this.onStart,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -207,6 +248,12 @@ class _RecordsEmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: ShunshiTextStyles.caption,
             ),
+            const SizedBox(height: 20),
+            GentleButton(
+              text: actionLabel,
+              isPrimary: true,
+              onPressed: onStart,
+            ),
           ],
         ),
       ),
@@ -216,7 +263,8 @@ class _RecordsEmptyState extends StatelessWidget {
 
 class _MoodTab extends StatefulWidget {
   final List<_MoodRecord> records;
-  const _MoodTab({required this.records});
+  final Future<void> Function() onChanged;
+  const _MoodTab({required this.records, required this.onChanged});
 
   @override
   State<_MoodTab> createState() => _MoodTabState();
@@ -239,39 +287,59 @@ class _MoodTabState extends State<_MoodTab> {
     super.dispose();
   }
 
-  void _record() {
+  Future<void> _record() async {
     if (_selectedEmojiIndex < 0) return;
     final choice = _emojis[_selectedEmojiIndex];
     setState(() {
-      widget.records.last = _MoodRecord(
-        date: '今天',
+      final record = _MoodRecord(
+        date: _todayLabel(),
         emoji: choice.emoji,
         label: choice.label,
         value: choice.value,
         note: _noteController.text.trim(),
         time: _nowLabel(),
       );
+      if (widget.records.isNotEmpty &&
+          widget.records.last.date == record.date) {
+        widget.records[widget.records.length - 1] = record;
+      } else {
+        widget.records.add(record);
+        if (widget.records.length > 7) widget.records.removeAt(0);
+      }
       _selectedEmojiIndex = -1;
       _noteController.clear();
     });
+    await widget.onChanged();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('已记录：${choice.label}',
-            style: ShunshiTextStyles.caption.copyWith(color: Colors.white)),
+        content: Text(
+          '已记录：${choice.label}',
+          style: ShunshiTextStyles.caption.copyWith(color: Colors.white),
+        ),
         backgroundColor: ShunshiColors.primary,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium)),
+          borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium),
+        ),
       ),
     );
   }
 
+  void _recordFirstMood() {
+    setState(() => _selectedEmojiIndex = 1);
+    _record();
+  }
+
   String _nowLabel() {
     final h = DateTime.now().hour;
-    if (h < 6) return '凌晨${h}:${DateTime.now().minute.toString().padLeft(2, '0')}';
-    if (h < 12) return '上午${h}:${DateTime.now().minute.toString().padLeft(2, '0')}';
-    if (h < 18) return '下午${h - 12}:${DateTime.now().minute.toString().padLeft(2, '0')}';
+    if (h < 6)
+      return '凌晨${h}:${DateTime.now().minute.toString().padLeft(2, '0')}';
+    if (h < 12)
+      return '上午${h}:${DateTime.now().minute.toString().padLeft(2, '0')}';
+    if (h < 18)
+      return '下午${h - 12}:${DateTime.now().minute.toString().padLeft(2, '0')}';
     return '晚上${h - 12}:${DateTime.now().minute.toString().padLeft(2, '0')}';
   }
 
@@ -281,7 +349,11 @@ class _MoodTabState extends State<_MoodTab> {
     // 一旦传入空列表就会抛 "Bad state: No element" 导致整页崩溃——
     // 这也是当前只能用假数据填充的原因之一。
     if (widget.records.isEmpty) {
-      return const _RecordsEmptyState(hint: '还没有情绪记录，从下方记录今天的心情吧');
+      return _RecordsEmptyState(
+        hint: '还没有情绪记录。先记录此刻为“平静”，保存后可继续补充心情和备注。',
+        actionLabel: '记录“平静”',
+        onStart: _recordFirstMood,
+      );
     }
     final values = widget.records.map((r) => r.value).toList();
     final labels = widget.records.map((r) => r.date).toList();
@@ -352,8 +424,7 @@ class _MoodTabState extends State<_MoodTab> {
                     final e = _emojis[i];
                     final selected = _selectedEmojiIndex == i;
                     return GestureDetector(
-                      onTap: () =>
-                          setState(() => _selectedEmojiIndex = i),
+                      onTap: () => setState(() => _selectedEmojiIndex = i),
                       child: AnimatedContainer(
                         duration: ShunshiAnimations.stateChange,
                         padding: const EdgeInsets.symmetric(
@@ -365,7 +436,8 @@ class _MoodTabState extends State<_MoodTab> {
                               ? ShunshiColors.warm.withValues(alpha: 0.15)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(
-                              ShunshiSpacing.radiusMedium),
+                            ShunshiSpacing.radiusMedium,
+                          ),
                           border: Border.all(
                             color: selected
                                 ? ShunshiColors.warm.withValues(alpha: 0.5)
@@ -375,13 +447,17 @@ class _MoodTabState extends State<_MoodTab> {
                         ),
                         child: Column(
                           children: [
-                            Text(e.emoji,
-                                style: TextStyle(
-                                    fontSize: selected ? 28 : 24)),
+                            Text(
+                              e.emoji,
+                              style: TextStyle(fontSize: selected ? 28 : 24),
+                            ),
                             const SizedBox(height: 2),
-                            Text(e.label,
-                                style: ShunshiTextStyles.caption
-                                    .copyWith(fontSize: 10)),
+                            Text(
+                              e.label,
+                              style: ShunshiTextStyles.caption.copyWith(
+                                fontSize: 10,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -398,19 +474,24 @@ class _MoodTabState extends State<_MoodTab> {
                     hintStyle: ShunshiTextStyles.hint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
-                          ShunshiSpacing.radiusMedium),
+                        ShunshiSpacing.radiusMedium,
+                      ),
                       borderSide: BorderSide(color: ShunshiColors.divider),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
-                          ShunshiSpacing.radiusMedium),
+                        ShunshiSpacing.radiusMedium,
+                      ),
                       borderSide: BorderSide(color: ShunshiColors.divider),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
-                          ShunshiSpacing.radiusMedium),
+                        ShunshiSpacing.radiusMedium,
+                      ),
                       borderSide: BorderSide(
-                          color: ShunshiColors.primary, width: 1.5),
+                        color: ShunshiColors.primary,
+                        width: 1.5,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: ShunshiSpacing.md,
@@ -444,7 +525,8 @@ class _MoodTabState extends State<_MoodTab> {
 
 class _SleepTab extends StatefulWidget {
   final List<_SleepRecord> records;
-  const _SleepTab({required this.records});
+  final Future<void> Function() onChanged;
+  const _SleepTab({required this.records, required this.onChanged});
 
   @override
   State<_SleepTab> createState() => _SleepTabState();
@@ -483,30 +565,42 @@ class _SleepTabState extends State<_SleepTab> {
     return '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
   }
 
-  void _record() {
+  Future<void> _record() async {
     final bedMin = _bedtime.hour * 60 + _bedtime.minute;
     var wakeMin = _wakeup.hour * 60 + _wakeup.minute;
     if (wakeMin <= bedMin) wakeMin += 24 * 60; // 跨夜
     final hours = (wakeMin - bedMin) / 60;
     final quality = _SleepQuality.values[_qualityIndex];
     setState(() {
-      widget.records.last = _SleepRecord(
-        date: '今天',
+      final record = _SleepRecord(
+        date: _todayLabel(),
         hours: hours,
         quality: quality,
         bedtime: _fmt(_bedtime),
         wakeup: _fmt(_wakeup),
       );
+      if (widget.records.isNotEmpty &&
+          widget.records.last.date == record.date) {
+        widget.records[widget.records.length - 1] = record;
+      } else {
+        widget.records.add(record);
+        if (widget.records.length > 7) widget.records.removeAt(0);
+      }
     });
+    await widget.onChanged();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('已记录睡眠 ${hours.toStringAsFixed(1)}小时',
-            style: ShunshiTextStyles.caption.copyWith(color: Colors.white)),
+        content: Text(
+          '已记录睡眠 ${hours.toStringAsFixed(1)}小时',
+          style: ShunshiTextStyles.caption.copyWith(color: Colors.white),
+        ),
         backgroundColor: ShunshiColors.calm,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium)),
+          borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium),
+        ),
       ),
     );
   }
@@ -514,7 +608,12 @@ class _SleepTabState extends State<_SleepTab> {
   @override
   Widget build(BuildContext context) {
     if (widget.records.isEmpty) {
-      return const _RecordsEmptyState(hint: '还没有睡眠记录，从下方记录昨晚的睡眠吧');
+      return _RecordsEmptyState(
+        hint:
+            '还没有睡眠记录。当前设置为 ${_fmt(_bedtime)}–${_fmt(_wakeup)}、${_SleepQuality.values[_qualityIndex].label}。',
+        actionLabel: '按当前设置记录',
+        onStart: _record,
+      );
     }
     final values = widget.records.map((r) => r.hours).toList();
     final labels = widget.records.map((r) => r.date).toList();
@@ -603,8 +702,11 @@ class _SleepTabState extends State<_SleepTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(_fmt(_bedtime), style: ShunshiTextStyles.body),
-                        Icon(Icons.access_time,
-                            size: 18, color: ShunshiColors.textHint),
+                        Icon(
+                          Icons.access_time,
+                          size: 18,
+                          color: ShunshiColors.textHint,
+                        ),
                       ],
                     ),
                   ),
@@ -623,8 +725,11 @@ class _SleepTabState extends State<_SleepTab> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(_fmt(_wakeup), style: ShunshiTextStyles.body),
-                        Icon(Icons.access_time,
-                            size: 18, color: ShunshiColors.textHint),
+                        Icon(
+                          Icons.access_time,
+                          size: 18,
+                          color: ShunshiColors.textHint,
+                        ),
                       ],
                     ),
                   ),
@@ -638,8 +743,7 @@ class _SleepTabState extends State<_SleepTab> {
                     final q = _SleepQuality.values[i];
                     final selected = _qualityIndex == i;
                     return GestureDetector(
-                      onTap: () =>
-                          setState(() => _qualityIndex = i),
+                      onTap: () => setState(() => _qualityIndex = i),
                       child: AnimatedContainer(
                         duration: ShunshiAnimations.stateChange,
                         padding: const EdgeInsets.symmetric(
@@ -651,7 +755,8 @@ class _SleepTabState extends State<_SleepTab> {
                               ? q.color.withValues(alpha: 0.15)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(
-                              ShunshiSpacing.radiusMedium),
+                            ShunshiSpacing.radiusMedium,
+                          ),
                           border: Border.all(
                             color: selected
                                 ? q.color.withValues(alpha: 0.5)
@@ -661,13 +766,17 @@ class _SleepTabState extends State<_SleepTab> {
                         ),
                         child: Column(
                           children: [
-                            Text(q.emoji,
-                                style: TextStyle(
-                                    fontSize: selected ? 28 : 24)),
+                            Text(
+                              q.emoji,
+                              style: TextStyle(fontSize: selected ? 28 : 24),
+                            ),
                             const SizedBox(height: 2),
-                            Text(q.label,
-                                style: ShunshiTextStyles.caption
-                                    .copyWith(fontSize: 10)),
+                            Text(
+                              q.label,
+                              style: ShunshiTextStyles.caption.copyWith(
+                                fontSize: 10,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -699,7 +808,8 @@ class _SleepTabState extends State<_SleepTab> {
 
 class _ExerciseTab extends StatefulWidget {
   final List<_ExerciseRecord> records;
-  const _ExerciseTab({required this.records});
+  final Future<void> Function() onChanged;
+  const _ExerciseTab({required this.records, required this.onChanged});
 
   @override
   State<_ExerciseTab> createState() => _ExerciseTabState();
@@ -713,24 +823,36 @@ class _ExerciseTabState extends State<_ExerciseTab> {
 
   static const List<String> _intensities = ['轻', '中', '高'];
 
-  void _record() {
+  Future<void> _record() async {
     setState(() {
-      widget.records.last = _ExerciseRecord(
-        date: '今天',
+      final record = _ExerciseRecord(
+        date: _todayLabel(),
         minutes: _duration.round(),
         type: _types[_typeIndex],
         intensity: _intensities[_intensityIndex],
       );
+      if (widget.records.isNotEmpty &&
+          widget.records.last.date == record.date) {
+        widget.records[widget.records.length - 1] = record;
+      } else {
+        widget.records.add(record);
+        if (widget.records.length > 7) widget.records.removeAt(0);
+      }
     });
+    await widget.onChanged();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${_types[_typeIndex]} ${_duration.round()}分钟',
-            style: ShunshiTextStyles.caption.copyWith(color: Colors.white)),
+        content: Text(
+          '${_types[_typeIndex]} ${_duration.round()}分钟',
+          style: ShunshiTextStyles.caption.copyWith(color: Colors.white),
+        ),
         backgroundColor: ShunshiColors.primary,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium)),
+          borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium),
+        ),
       ),
     );
   }
@@ -738,7 +860,12 @@ class _ExerciseTabState extends State<_ExerciseTab> {
   @override
   Widget build(BuildContext context) {
     if (widget.records.isEmpty) {
-      return const _RecordsEmptyState(hint: '还没有运动记录，从下方记录今天的活动吧');
+      return _RecordsEmptyState(
+        hint:
+            '还没有运动记录。当前设置为${_types[_typeIndex]} ${_duration.round()}分钟、${_intensities[_intensityIndex]}强度。',
+        actionLabel: '按当前设置记录',
+        onStart: _record,
+      );
     }
     final values = widget.records.map((r) => r.minutes.toDouble()).toList();
     final labels = widget.records.map((r) => r.date).toList();
@@ -784,8 +911,7 @@ class _ExerciseTabState extends State<_ExerciseTab> {
                         ),
                       ),
                       if (last.type.isNotEmpty)
-                        Text(last.type,
-                            style: ShunshiTextStyles.bodySecondary),
+                        Text(last.type, style: ShunshiTextStyles.bodySecondary),
                     ],
                   ),
                 ),
@@ -797,8 +923,9 @@ class _ExerciseTabState extends State<_ExerciseTab> {
                     ),
                     decoration: BoxDecoration(
                       color: ShunshiColors.primaryLight.withValues(alpha: 0.3),
-                      borderRadius:
-                          BorderRadius.circular(ShunshiSpacing.radiusFull),
+                      borderRadius: BorderRadius.circular(
+                        ShunshiSpacing.radiusFull,
+                      ),
                     ),
                     child: Text(
                       last.intensity,
@@ -833,8 +960,7 @@ class _ExerciseTabState extends State<_ExerciseTab> {
                     itemBuilder: (context, i) {
                       final selected = _typeIndex == i;
                       return GestureDetector(
-                        onTap: () =>
-                            setState(() => _typeIndex = i),
+                        onTap: () => setState(() => _typeIndex = i),
                         child: AnimatedContainer(
                           duration: ShunshiAnimations.stateChange,
                           padding: const EdgeInsets.symmetric(
@@ -846,7 +972,8 @@ class _ExerciseTabState extends State<_ExerciseTab> {
                                 ? ShunshiColors.primary.withValues(alpha: 0.15)
                                 : ShunshiColors.surfaceDim,
                             borderRadius: BorderRadius.circular(
-                                ShunshiSpacing.radiusFull),
+                              ShunshiSpacing.radiusFull,
+                            ),
                             border: Border.all(
                               color: selected
                                   ? ShunshiColors.primary.withValues(alpha: 0.5)
@@ -855,12 +982,14 @@ class _ExerciseTabState extends State<_ExerciseTab> {
                             ),
                           ),
                           child: Center(
-                            child: Text(_types[i],
-                                style: ShunshiTextStyles.caption.copyWith(
-                                  color: selected
-                                      ? ShunshiColors.primary
-                                      : ShunshiColors.textSecondary,
-                                )),
+                            child: Text(
+                              _types[i],
+                              style: ShunshiTextStyles.caption.copyWith(
+                                color: selected
+                                    ? ShunshiColors.primary
+                                    : ShunshiColors.textSecondary,
+                              ),
+                            ),
                           ),
                         ),
                       );
@@ -877,21 +1006,23 @@ class _ExerciseTabState extends State<_ExerciseTab> {
                       child: SliderTheme(
                         data: SliderThemeData(
                           activeTrackColor: ShunshiColors.primary,
-                          inactiveTrackColor:
-                              ShunshiColors.primary.withValues(alpha: 0.2),
+                          inactiveTrackColor: ShunshiColors.primary.withValues(
+                            alpha: 0.2,
+                          ),
                           thumbColor: ShunshiColors.primary,
-                          overlayColor:
-                              ShunshiColors.primary.withValues(alpha: 0.1),
+                          overlayColor: ShunshiColors.primary.withValues(
+                            alpha: 0.1,
+                          ),
                           trackHeight: 3,
                           thumbShape: const RoundSliderThumbShape(
-                              enabledThumbRadius: 8),
+                            enabledThumbRadius: 8,
+                          ),
                         ),
                         child: Slider(
                           value: _duration,
                           min: 5,
                           max: 120,
-                          onChanged: (v) =>
-                              setState(() => _duration = v),
+                          onChanged: (v) => setState(() => _duration = v),
                         ),
                       ),
                     ),
@@ -913,12 +1044,10 @@ class _ExerciseTabState extends State<_ExerciseTab> {
                 const SizedBox(height: ShunshiSpacing.sm),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(
-                      _intensities.length, (i) {
+                  children: List.generate(_intensities.length, (i) {
                     final selected = _intensityIndex == i;
                     return GestureDetector(
-                      onTap: () =>
-                          setState(() => _intensityIndex = i),
+                      onTap: () => setState(() => _intensityIndex = i),
                       child: AnimatedContainer(
                         duration: ShunshiAnimations.stateChange,
                         padding: const EdgeInsets.symmetric(
@@ -930,7 +1059,8 @@ class _ExerciseTabState extends State<_ExerciseTab> {
                               ? ShunshiColors.primary.withValues(alpha: 0.15)
                               : Colors.transparent,
                           borderRadius: BorderRadius.circular(
-                              ShunshiSpacing.radiusMedium),
+                            ShunshiSpacing.radiusMedium,
+                          ),
                           border: Border.all(
                             color: selected
                                 ? ShunshiColors.primary.withValues(alpha: 0.5)
@@ -975,7 +1105,8 @@ class _ExerciseTabState extends State<_ExerciseTab> {
 
 class _DietTab extends StatefulWidget {
   final List<_DietRecord> records;
-  const _DietTab({required this.records});
+  final Future<void> Function() onChanged;
+  const _DietTab({required this.records, required this.onChanged});
 
   @override
   State<_DietTab> createState() => _DietTabState();
@@ -985,27 +1116,43 @@ class _DietTabState extends State<_DietTab> {
   int _score = 7;
   final TextEditingController _noteController = TextEditingController();
 
-  void _record() {
+  Future<void> _record() async {
     setState(() {
-      widget.records.last = _DietRecord(
-        date: '今天',
+      final record = _DietRecord(
+        date: _todayLabel(),
         score: _score,
         meals: _noteController.text.trim().isEmpty
             ? '未填写'
             : _noteController.text.trim(),
-        emoji: _score >= 8 ? '🥗' : _score >= 6 ? '🍔' : '☕',
+        emoji: _score >= 8
+            ? '🥗'
+            : _score >= 6
+            ? '🍔'
+            : '☕',
       );
+      if (widget.records.isNotEmpty &&
+          widget.records.last.date == record.date) {
+        widget.records[widget.records.length - 1] = record;
+      } else {
+        widget.records.add(record);
+        if (widget.records.length > 7) widget.records.removeAt(0);
+      }
       _noteController.clear();
     });
+    await widget.onChanged();
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('饮食健康度 ${_score}/10',
-            style: ShunshiTextStyles.caption.copyWith(color: Colors.white)),
+        content: Text(
+          '饮食健康度 ${_score}/10',
+          style: ShunshiTextStyles.caption.copyWith(color: Colors.white),
+        ),
         backgroundColor: ShunshiColors.earth,
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium)),
+          borderRadius: BorderRadius.circular(ShunshiSpacing.radiusMedium),
+        ),
       ),
     );
   }
@@ -1019,7 +1166,11 @@ class _DietTabState extends State<_DietTab> {
   @override
   Widget build(BuildContext context) {
     if (widget.records.isEmpty) {
-      return const _RecordsEmptyState(hint: '还没有饮食记录，从下方记录今天的饮食吧');
+      return _RecordsEmptyState(
+        hint: '还没有饮食记录。当前健康度为 $_score/10，餐食内容将记为“未填写”。',
+        actionLabel: '按当前设置记录',
+        onStart: _record,
+      );
     }
     final values = widget.records.map((r) => r.score.toDouble()).toList();
     final labels = widget.records.map((r) => r.date).toList();
@@ -1060,8 +1211,10 @@ class _DietTabState extends State<_DietTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(last.meals, style: ShunshiTextStyles.body),
-                      Text('健康度 ${last.score}/10',
-                          style: ShunshiTextStyles.caption),
+                      Text(
+                        '健康度 ${last.score}/10',
+                        style: ShunshiTextStyles.caption,
+                      ),
                     ],
                   ),
                 ),
@@ -1088,19 +1241,24 @@ class _DietTabState extends State<_DietTab> {
                     hintStyle: ShunshiTextStyles.hint,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
-                          ShunshiSpacing.radiusMedium),
+                        ShunshiSpacing.radiusMedium,
+                      ),
                       borderSide: BorderSide(color: ShunshiColors.divider),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
-                          ShunshiSpacing.radiusMedium),
+                        ShunshiSpacing.radiusMedium,
+                      ),
                       borderSide: BorderSide(color: ShunshiColors.divider),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(
-                          ShunshiSpacing.radiusMedium),
+                        ShunshiSpacing.radiusMedium,
+                      ),
                       borderSide: BorderSide(
-                          color: ShunshiColors.primary, width: 1.5),
+                        color: ShunshiColors.primary,
+                        width: 1.5,
+                      ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: ShunshiSpacing.md,
@@ -1120,22 +1278,24 @@ class _DietTabState extends State<_DietTab> {
                       child: SliderTheme(
                         data: SliderThemeData(
                           activeTrackColor: ShunshiColors.earth,
-                          inactiveTrackColor:
-                              ShunshiColors.earth.withValues(alpha: 0.2),
+                          inactiveTrackColor: ShunshiColors.earth.withValues(
+                            alpha: 0.2,
+                          ),
                           thumbColor: ShunshiColors.earth,
-                          overlayColor:
-                              ShunshiColors.earth.withValues(alpha: 0.1),
+                          overlayColor: ShunshiColors.earth.withValues(
+                            alpha: 0.1,
+                          ),
                           trackHeight: 3,
                           thumbShape: const RoundSliderThumbShape(
-                              enabledThumbRadius: 8),
+                            enabledThumbRadius: 8,
+                          ),
                         ),
                         child: Slider(
                           value: _score.toDouble(),
                           min: 1,
                           max: 10,
                           divisions: 9,
-                          onChanged: (v) =>
-                              setState(() => _score = v.round()),
+                          onChanged: (v) => setState(() => _score = v.round()),
                         ),
                       ),
                     ),
@@ -1233,8 +1393,7 @@ class _SoftLinePainter extends CustomPainter {
 
     final points = <Offset>[];
     for (int i = 0; i < data.length; i++) {
-      final x = padL +
-          (data.length > 1 ? i / (data.length - 1) * w : w / 2);
+      final x = padL + (data.length > 1 ? i / (data.length - 1) * w : w / 2);
       final y = padT + h - ((data[i] - aMin) / aRange) * h;
       points.add(Offset(x, y));
     }
@@ -1244,12 +1403,12 @@ class _SoftLinePainter extends CustomPainter {
       ..moveTo(points.first.dx, padT + h)
       ..lineTo(points.first.dx, points.first.dy);
     for (int i = 1; i < points.length; i++) {
-      final c1 =
-          Offset((points[i].dx + points[i - 1].dx) / 2, points[i - 1].dy);
-      final c2 =
-          Offset((points[i].dx + points[i - 1].dx) / 2, points[i].dy);
-      fillPath.cubicTo(
-          c1.dx, c1.dy, c2.dx, c2.dy, points[i].dx, points[i].dy);
+      final c1 = Offset(
+        (points[i].dx + points[i - 1].dx) / 2,
+        points[i - 1].dy,
+      );
+      final c2 = Offset((points[i].dx + points[i - 1].dx) / 2, points[i].dy);
+      fillPath.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, points[i].dx, points[i].dy);
     }
     fillPath.lineTo(points.last.dx, padT + h);
     fillPath.close();
@@ -1261,7 +1420,10 @@ class _SoftLinePainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [lineColor.withValues(alpha: 0.15), lineColor.withValues(alpha: 0.02)],
+          colors: [
+            lineColor.withValues(alpha: 0.15),
+            lineColor.withValues(alpha: 0.02),
+          ],
         ).createShader(rect),
     );
     canvas.drawPath(
@@ -1270,7 +1432,10 @@ class _SoftLinePainter extends CustomPainter {
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
-          colors: [lineColor.withValues(alpha: 0.2), lineColor.withValues(alpha: 0.03)],
+          colors: [
+            lineColor.withValues(alpha: 0.2),
+            lineColor.withValues(alpha: 0.03),
+          ],
         ).createShader(rect),
     );
 
@@ -1284,12 +1449,12 @@ class _SoftLinePainter extends CustomPainter {
 
     final linePath = Path()..moveTo(points.first.dx, points.first.dy);
     for (int i = 1; i < points.length; i++) {
-      final c1 =
-          Offset((points[i].dx + points[i - 1].dx) / 2, points[i - 1].dy);
-      final c2 =
-          Offset((points[i].dx + points[i - 1].dx) / 2, points[i].dy);
-      linePath.cubicTo(
-          c1.dx, c1.dy, c2.dx, c2.dy, points[i].dx, points[i].dy);
+      final c1 = Offset(
+        (points[i].dx + points[i - 1].dx) / 2,
+        points[i - 1].dy,
+      );
+      final c2 = Offset((points[i].dx + points[i - 1].dx) / 2, points[i].dy);
+      linePath.cubicTo(c1.dx, c1.dy, c2.dx, c2.dy, points[i].dx, points[i].dy);
     }
     canvas.drawPath(linePath, linePaint);
 
@@ -1301,8 +1466,8 @@ class _SoftLinePainter extends CustomPainter {
 
     // X轴标签
     for (int i = 0; i < labels.length; i++) {
-      final x = padL +
-          (labels.length > 1 ? i / (labels.length - 1) * w : w / 2);
+      final x =
+          padL + (labels.length > 1 ? i / (labels.length - 1) * w : w / 2);
       final tp = TextPainter(
         text: TextSpan(
           text: labels[i],
@@ -1402,8 +1567,7 @@ class _SoftBarPainter extends CustomPainter {
         textDirection: TextDirection.ltr,
       );
       tp.layout();
-      tp.paint(
-          canvas, Offset(x + barWidth / 2 - tp.width / 2, y - 14));
+      tp.paint(canvas, Offset(x + barWidth / 2 - tp.width / 2, y - 14));
 
       // X轴标签
       final lp = TextPainter(
@@ -1434,8 +1598,11 @@ class _EmojiChoice {
   final String emoji;
   final String label;
   final double value;
-  const _EmojiChoice(
-      {required this.emoji, required this.label, required this.value});
+  const _EmojiChoice({
+    required this.emoji,
+    required this.label,
+    required this.value,
+  });
 }
 
 class _MoodRecord {
@@ -1453,6 +1620,22 @@ class _MoodRecord {
     required this.note,
     this.time,
   });
+  factory _MoodRecord.fromJson(Map<String, dynamic> json) => _MoodRecord(
+    date: json['date'] as String? ?? '今天',
+    emoji: json['emoji'] as String? ?? '😌',
+    label: json['label'] as String? ?? '平静',
+    value: (json['value'] as num?)?.toDouble() ?? 6,
+    note: json['note'] as String? ?? '',
+    time: json['time'] as String?,
+  );
+  Map<String, dynamic> toJson() => {
+    'date': date,
+    'emoji': emoji,
+    'label': label,
+    'value': value,
+    'note': note,
+    'time': time,
+  };
 }
 
 enum _SleepQuality {
@@ -1485,6 +1668,23 @@ class _SleepRecord {
     required this.bedtime,
     required this.wakeup,
   });
+  factory _SleepRecord.fromJson(Map<String, dynamic> json) => _SleepRecord(
+    date: json['date'] as String? ?? '今天',
+    hours: (json['hours'] as num?)?.toDouble() ?? 0,
+    quality: _SleepQuality.values.firstWhere(
+      (item) => item.name == json['quality'],
+      orElse: () => _SleepQuality.good,
+    ),
+    bedtime: json['bedtime'] as String? ?? '',
+    wakeup: json['wakeup'] as String? ?? '',
+  );
+  Map<String, dynamic> toJson() => {
+    'date': date,
+    'hours': hours,
+    'quality': quality.name,
+    'bedtime': bedtime,
+    'wakeup': wakeup,
+  };
 }
 
 class _ExerciseRecord {
@@ -1498,6 +1698,19 @@ class _ExerciseRecord {
     required this.type,
     required this.intensity,
   });
+  factory _ExerciseRecord.fromJson(Map<String, dynamic> json) =>
+      _ExerciseRecord(
+        date: json['date'] as String? ?? '今天',
+        minutes: (json['minutes'] as num?)?.toInt() ?? 0,
+        type: json['type'] as String? ?? '',
+        intensity: json['intensity'] as String? ?? '',
+      );
+  Map<String, dynamic> toJson() => {
+    'date': date,
+    'minutes': minutes,
+    'type': type,
+    'intensity': intensity,
+  };
 }
 
 class _DietRecord {
@@ -1511,4 +1724,16 @@ class _DietRecord {
     required this.meals,
     required this.emoji,
   });
+  factory _DietRecord.fromJson(Map<String, dynamic> json) => _DietRecord(
+    date: json['date'] as String? ?? '今天',
+    score: (json['score'] as num?)?.toInt() ?? 0,
+    meals: json['meals'] as String? ?? '',
+    emoji: json['emoji'] as String? ?? '🍽️',
+  );
+  Map<String, dynamic> toJson() => {
+    'date': date,
+    'score': score,
+    'meals': meals,
+    'emoji': emoji,
+  };
 }

@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../config/app_config.dart';
 import '../storage/token_storage.dart';
 import '../storage/local_storage.dart';
@@ -73,7 +74,9 @@ class NetworkService {
       _AuthInterceptor(),
       _RetryInterceptor(),
       _OfflineInterceptor(),
-      _LoggingInterceptor(),
+      // 请求日志只在调试构建开启 —— release 包里逐条打印
+      // API 路径会泄露用户行为轨迹。
+      if (kDebugMode) _LoggingInterceptor(),
     ]);
     
     return dio;
@@ -259,19 +262,19 @@ class _OfflineInterceptor extends Interceptor {
 class _LoggingInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    print('📤 [API] ${options.method} ${options.path}');
+    debugPrint('📤 [API] ${options.method} ${options.path}');
     handler.next(options);
   }
-  
+
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
-    print('📥 [API] ${response.statusCode} ${response.requestOptions.path}');
+    debugPrint('📥 [API] ${response.statusCode} ${response.requestOptions.path}');
     handler.next(response);
   }
-  
+
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
-    print('❌ [API] ${err.response?.statusCode} ${err.requestOptions.path}');
+    debugPrint('❌ [API] ${err.response?.statusCode} ${err.requestOptions.path}');
     handler.next(err);
   }
 }

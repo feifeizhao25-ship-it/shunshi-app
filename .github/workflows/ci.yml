@@ -34,6 +34,11 @@ jobs:
         run: >-
           flutter build web --release
           --dart-define=SHUNSHI_API_BASE_URL=https://ci.invalid
+      - name: Validate production Web container definition
+        run: >-
+          docker build -f Dockerfile.web
+          --build-arg SHUNSHI_API_BASE_URL=https://ci.invalid
+          --tag shunshi-web:${{ github.sha }} .
       - name: Build Android release smoke artifact
         env:
           ALLOW_DEBUG_RELEASE_SIGNING: "true"

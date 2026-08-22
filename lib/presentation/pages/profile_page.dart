@@ -3,6 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/services/store_service.dart';
+import '../../../core/network/network_service.dart';
+import '../../../core/storage/local_storage.dart';
 import '../widgets/components/components.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -14,6 +16,7 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   Map<String, dynamic>? _userInfo;
+  String? _loadError;
 
   // 设置状态
   bool _memoryEnabled = true;
@@ -27,13 +30,26 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     _loadUserInfo();
-    _loadHemisphere();
+    _loadSettings();
   }
 
-  Future<void> _loadHemisphere() async {
+  /// 读取本地持久化的开关状态（通知/静默时段/AI记忆）。
+  Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted)
-      setState(() => _hemisphere = prefs.getString('hemisphere') ?? 'north');
+    if (!mounted) return;
+    setState(() {
+      _hemisphere = prefs.getString('hemisphere') ?? 'north';
+      _notificationsEnabled = prefs.getBool('notifications_enabled') ?? true;
+      _memoryEnabled = prefs.getBool('memory_enabled') ?? true;
+      _dndEnabled = prefs.getBool('dnd_enabled') ?? false;
+      _dndStart = prefs.getString('dnd_start') ?? '22:00';
+      _dndEnd = prefs.getString('dnd_end') ?? '08:00';
+    });
+  }
+
+  Future<void> _persistSwitch(String key, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(key, value);
   }
 
   Future<void> _setHemisphere(String value) async {
@@ -170,22 +186,47 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadUserInfo() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    if (mounted) {
+    try {
+      final responses = await Future.wait([
+        NetworkService().client.get('/users/me'),
+        NetworkService().client.get('/subscription/current'),
+      ]);
+      Map<String, dynamic> unwrap(dynamic value) {
+        final map = Map<String, dynamic>.from(value as Map);
+        final data = map['data'];
+        return data is Map ? Map<String, dynamic>.from(data) : map;
+      }
+
+      final user = unwrap(responses[0].data);
+      final subscription = unwrap(responses[1].data);
+      final createdAt = DateTime.tryParse('${user['created_at'] ?? ''}');
+      final daysTogether = createdAt == null
+          ? 0
+          : DateTime.now()
+                .difference(createdAt.toLocal())
+                .inDays
+                .clamp(0, 99999);
+      final plan =
+          '${subscription['plan'] ?? (user['is_premium'] == true ? 'premium' : 'free')}';
+      if (!mounted) return;
       setState(() {
+        _loadError = null;
         _userInfo = {
-          'name': '用户',
+          'name': user['nickname'] ?? '顺时用户',
           'avatar': '😊',
-          'subscription_type': 'free',
-          'subscription_label': '免费用户',
-          'days_together': 23,
-          'total_conversations': 42,
-          'total_records': 18,
-          'total_reflections': 7,
-          'streak_days': 5,
-          'member_since': '2026-01-01',
+          'subscription_type': plan,
+          'subscription_label': plan == 'free' ? '免费用户' : '会员',
+          'days_together': daysTogether,
+          // 统计接口未提供时显示0，绝不伪造活跃数据。
+          'total_conversations': user['total_conversations'] ?? 0,
+          'total_records': user['total_records'] ?? 0,
+          'total_reflections': user['total_reflections'] ?? 0,
+          'streak_days': user['streak_days'] ?? 0,
+          'member_since': user['created_at'] ?? '',
         };
       });
+    } catch (_) {
+      if (mounted) setState(() => _loadError = '无法加载账户和会员权益，请检查网络后重试');
     }
   }
 
@@ -225,7 +266,21 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg(context),
-      body: _userInfo == null
+      body: _loadError != null
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_loadError!, textAlign: TextAlign.center),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: _loadUserInfo,
+                    child: const Text('重新加载'),
+                  ),
+                ],
+              ),
+            )
+          : _userInfo == null
           ? Center(
               child: CircularProgressIndicator(
                 color: _primary(context),
@@ -436,7 +491,10 @@ class _ProfilePageState extends State<ProfilePage> {
         label: '通知设置',
         isSwitch: true,
         switchValue: _notificationsEnabled,
-        onSwitchChanged: (v) => setState(() => _notificationsEnabled = v),
+        onSwitchChanged: (v) {
+          setState(() => _notificationsEnabled = v);
+          _persistSwitch('notifications_enabled', v);
+        },
       ),
       _MenuItemData(
         emoji: '🌙',
@@ -449,6 +507,7 @@ class _ProfilePageState extends State<ProfilePage> {
             _showDndTimePicker(context);
           } else {
             setState(() => _dndEnabled = v);
+            _persistSwitch('dnd_enabled', v);
           }
         },
       ),
@@ -457,7 +516,7 @@ class _ProfilePageState extends State<ProfilePage> {
         label: 'AI记忆',
         isSwitch: true,
         switchValue: _memoryEnabled,
-        onSwitchChanged: (v) => setState(() => _memoryEnabled = v),
+        onSwitchChanged: _setMemoryEnabled,
       ),
       _MenuItemData(
         emoji: '🌍',
@@ -614,7 +673,12 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           // 关于顺时
           InkWell(
-            onTap: () {},
+            onTap: () => showAboutDialog(
+              context: context,
+              applicationName: '顺时',
+              applicationVersion: '1.0.0',
+              applicationLegalese: '顺应时节，养生有道',
+            ),
             child: Container(
               padding: EdgeInsets.symmetric(
                 horizontal: ShunshiSpacing.cardPadding,
@@ -653,6 +717,65 @@ class _ProfilePageState extends State<ProfilePage> {
 
   // ==================== Dialogs ====================
 
+  /// 切换 AI 记忆。
+  ///
+  /// 此前只翻转本地 switch，后端记忆照常写入 —— 开关是假的。
+  /// 现在调用记忆开关接口，失败时回退并明确提示。
+  Future<void> _setMemoryEnabled(bool value) async {
+    final previous = _memoryEnabled;
+    setState(() => _memoryEnabled = value);
+    try {
+      final response = await NetworkService().client.put(
+        '/memory/toggle',
+        data: {'enabled': value},
+      );
+      final code = response.statusCode ?? 0;
+      if (code < 200 || code >= 300) {
+        throw StateError('unexpected status $code');
+      }
+      await _persistSwitch('memory_enabled', value);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _memoryEnabled = previous);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('设置失败，请检查网络后重试')),
+      );
+    }
+  }
+
+  /// 清空记忆：真实调用后端删除接口并清掉本地缓存。
+  ///
+  /// 此前只 `setState(_memoryEnabled = false)` 就提示"记忆已清空"，
+  /// 实际什么都没删 —— 典型的假成功。现在失败时明确报错，不谎报。
+  Future<void> _clearMemory() async {
+    try {
+      final response = await NetworkService().client.delete('/memory');
+      final code = response.statusCode ?? 0;
+      if (code < 200 || code >= 300) {
+        throw StateError('unexpected status $code');
+      }
+      await localStorage.clearUserData();
+      if (!mounted) return;
+      setState(() => _memoryEnabled = false);
+      await _persistSwitch('memory_enabled', false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('记忆已清空，我会重新认识你'),
+          backgroundColor: _primary(context),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('清空失败，请检查网络后重试'),
+          backgroundColor: _error(context),
+        ),
+      );
+    }
+  }
+
   void _showClearMemoryDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -679,13 +802,7 @@ class _ProfilePageState extends State<ProfilePage> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              setState(() => _memoryEnabled = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('记忆已清空，我会重新认识你'),
-                  backgroundColor: _primary(context),
-                ),
-              );
+              _clearMemory();
             },
             child: Text(
               '清空',
@@ -761,8 +878,13 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   setState(() => _dndEnabled = true);
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('dnd_enabled', true);
+                  await prefs.setString('dnd_start', _dndStart);
+                  await prefs.setString('dnd_end', _dndEnd);
+                  if (!context.mounted) return;
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
