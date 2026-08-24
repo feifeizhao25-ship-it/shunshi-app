@@ -27,7 +27,7 @@ void main() {
     test('copyWith updates content for streaming', () {
       final msg = Message.fromJson(ApiFixtures.message);
       final streaming = msg.copyWith(
-        content: msg.content + '...',
+        content: '${msg.content}...',
         isStreaming: true,
       );
       expect(streaming.isStreaming, isTrue);

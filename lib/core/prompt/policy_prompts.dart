@@ -1,7 +1,7 @@
 // lib/core/prompt/policy_prompts.dart
 
-/// Policy Prompt - 安全与策略层
-/// 控制免费/付费用户的行为规则
+// Policy Prompt - 安全与策略层
+// 控制免费/付费用户的行为规则。
 
 class PolicyPrompts {
   /// 免费用户 Policy

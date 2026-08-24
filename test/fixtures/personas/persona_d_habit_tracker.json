@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "product": "shunshi",
+  "persona": {
+    "id": "D",
+    "archetype": "高频执行者",
+    "matrixRole": "习惯打卡用户",
+    "description": "把顺时当打卡工具：每天固定完成「作息+运动+食疗」三件套，7 天不断签；前排卡片因昨日完成而天天轮换。"
+  },
+  "goal": "energy",
+  "goalChosenOnDay": 1,
+  "weekStart": "2026-08-24",
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-08-24",
+      "renderAt": "2026-08-24T07:00:00",
+      "narrative": "选目标「白天更有精神」，当天完成作息、运动、食疗三件打卡。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "rhythm",
+          "type": "completed",
+          "at": "2026-08-24T07:10:00"
+        },
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-24T07:40:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-24T12:30:00"
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "date": "2026-08-25",
+      "renderAt": "2026-08-25T07:00:00",
+      "narrative": "昨天打卡的三张卡新颖性被压低；Hero 仍是今日节律（目标相关性足够高），前排第 4 位让位给没见过的新卡（家庭关怀）。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "rhythm",
+          "type": "completed",
+          "at": "2026-08-25T07:10:00"
+        },
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-25T07:40:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-25T12:30:00"
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "2026-08-26",
+      "renderAt": "2026-08-26T07:00:00",
+      "narrative": "打卡基线形成：前排固定为「节律/节气/运动」三件套，第 4 位每天轮换一张没看过的卡（今天是食疗）。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "rhythm",
+          "type": "completed",
+          "at": "2026-08-26T07:10:00"
+        },
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-26T07:40:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-26T12:30:00"
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "date": "2026-08-27",
+      "renderAt": "2026-08-27T07:00:00",
+      "narrative": "第 4 天，打卡节奏无波动；前排第 4 位继续轮换（今天是呼吸放松）。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "rhythm",
+          "type": "completed",
+          "at": "2026-08-27T07:10:00"
+        },
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-27T07:40:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-27T12:30:00"
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "date": "2026-08-28",
+      "renderAt": "2026-08-28T07:00:00",
+      "narrative": "第 5 天起节气临近换日、紧迫性升高，Hero 从今日节律切换为节气建议，并透出「昨天你完成了今日节律，今天推荐节气建议」的承接理由。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "rhythm",
+          "type": "completed",
+          "at": "2026-08-28T07:10:00"
+        },
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-28T07:40:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-28T12:30:00"
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "date": "2026-08-29",
+      "renderAt": "2026-08-29T07:00:00",
+      "narrative": "第 6 天，打卡不间断；Hero 稳定在节气建议，承接理由持续透出。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "rhythm",
+          "type": "completed",
+          "at": "2026-08-29T07:10:00"
+        },
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-29T07:40:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-29T12:30:00"
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "date": "2026-08-30",
+      "renderAt": "2026-08-30T07:00:00",
+      "narrative": "一周结束：7 天全勤、21 件行动全部完成；Hero 稳定在节气建议，前排前三固定为他的打卡三件套。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "rhythm",
+          "type": "completed",
+          "at": "2026-08-30T07:10:00"
+        },
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-30T07:40:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-30T12:30:00"
+        }
+      ]
+    }
+  ]
+}

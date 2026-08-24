@@ -12,6 +12,8 @@ import '../../presentation/pages/reflection/reflection_page.dart';
 import '../../presentation/pages/subscription/subscription_page.dart';
 import '../../presentation/pages/content_detail_page.dart';
 import '../../presentation/pages/login/login_page.dart';
+import '../../presentation/pages/legal/legal_document_page.dart';
+import '../../presentation/pages/not_found/not_found_page.dart';
 import '../../presentation/pages/records_page.dart';
 import '../../presentation/widgets/shell/main_shell.dart';
 
@@ -41,6 +43,18 @@ class AppRouter {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: '/terms',
+        builder: (context, state) => const LegalDocumentPage(
+          type: LegalDocumentType.terms,
+        ),
+      ),
+      GoRoute(
+        path: '/privacy',
+        builder: (context, state) => const LegalDocumentPage(
+          type: LegalDocumentType.privacy,
+        ),
       ),
 
       // ── 独立全屏页面（不在 Shell 内） ─────────────────────
@@ -115,7 +129,9 @@ class AppRouter {
     ],
     // Splash page handles onboarding redirect via context.go()
     // No sync redirect needed here — splash navigates after delay
+    //
+    // 404 兜底：中文友好页，不把 GoException 等框架异常文本暴露给用户
+    errorBuilder: (context, state) => const NotFoundPage(),
   );
 }
-
 

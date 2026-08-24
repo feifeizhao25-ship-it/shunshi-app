@@ -4,7 +4,6 @@
 // 用户操作≤10秒：选情绪 → 可选写一句话 → 记录
 // 情绪：😊😌😢😰 | GentleButton | 跳过今天
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../../data/network/api_client.dart';
 import '../../../core/theme/shunshi_colors.dart';

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "product": "shunshi",
+  "persona": {
+    "id": "A",
+    "archetype": "新手",
+    "matrixRole": "想改善作息的新手",
+    "description": "第一次用顺时，目标明确但不知从何开始；每天只做一件小事，晚间偶尔加一次呼吸放松。"
+  },
+  "goal": "sleep",
+  "goalChosenOnDay": 1,
+  "weekStart": "2026-08-24",
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-08-24",
+      "renderAt": "2026-08-24T08:30:00",
+      "narrative": "首次进入，先选目标「睡个好觉」，首页只盯一个首要任务；照着 Hero 完成今日作息，睡前点开呼吸。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "rhythm", "type": "opened", "at": "2026-08-24T08:40:00" },
+        { "cardId": "rhythm", "type": "completed", "at": "2026-08-24T08:50:00" },
+        { "cardId": "breath", "type": "opened", "at": "2026-08-24T21:30:00" }
+      ]
+    },
+    {
+      "day": 2,
+      "date": "2026-08-25",
+      "renderAt": "2026-08-25T08:30:00",
+      "narrative": "第二天首页按首日行为重排：昨天完成的作息让位，Hero 透出承接理由；继续完成作息，午间点开节气建议。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "rhythm", "type": "completed", "at": "2026-08-25T08:45:00" },
+        { "cardId": "solar_term", "type": "opened", "at": "2026-08-25T12:20:00" }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "2026-08-26",
+      "renderAt": "2026-08-26T08:30:00",
+      "narrative": "个人基线开始形成：点开过的节气/呼吸相关性上调，推荐理由出现「你之前点开过」。今晚只做了呼吸。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "breath", "type": "completed", "at": "2026-08-26T21:40:00" }
+      ]
+    },
+    {
+      "day": 4,
+      "date": "2026-08-27",
+      "renderAt": "2026-08-27T08:30:00",
+      "narrative": "昨天没做作息，今早作息卡重新回到前排（昨天完成的呼吸让位）；恢复完成作息。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "rhythm", "type": "opened", "at": "2026-08-27T08:40:00" },
+        { "cardId": "rhythm", "type": "completed", "at": "2026-08-27T08:50:00" }
+      ]
+    },
+    {
+      "day": 5,
+      "date": "2026-08-28",
+      "renderAt": "2026-08-28T08:30:00",
+      "narrative": "作息与呼吸形成固定组合：早上作息、晚上呼吸，首页前排稳定在这两类目标相关卡之间轮换。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "rhythm", "type": "completed", "at": "2026-08-28T08:50:00" },
+        { "cardId": "breath", "type": "completed", "at": "2026-08-28T21:30:00" }
+      ]
+    },
+    {
+      "day": 6,
+      "date": "2026-08-29",
+      "renderAt": "2026-08-29T08:30:00",
+      "narrative": "周六午间点开食疗卡看了一眼（未采纳），完成作息。看过未点的卡持续降新颖性，不再打扰前排。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "rhythm", "type": "completed", "at": "2026-08-29T08:50:00" },
+        { "cardId": "food", "type": "opened", "at": "2026-08-29T12:10:00" }
+      ]
+    },
+    {
+      "day": 7,
+      "date": "2026-08-30",
+      "renderAt": "2026-08-30T08:30:00",
+      "narrative": "一周结束：7 天全勤，完成 9 件行动（作息×6、呼吸×3）；前排稳定为「节气/作息/呼吸」个人组合，周六点开过的食疗进入前排第 4 位。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "rhythm", "type": "completed", "at": "2026-08-30T08:50:00" },
+        { "cardId": "breath", "type": "completed", "at": "2026-08-30T21:20:00" }
+      ]
+    }
+  ]
+}

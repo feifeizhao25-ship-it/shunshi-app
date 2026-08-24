@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/theme.dart';
 import '../../../data/services/store_service.dart';
 import '../../widgets/components/components.dart';
+import '../../widgets/responsive_content.dart';
 
 class SubscriptionPage extends StatefulWidget {
   const SubscriptionPage({super.key});
@@ -76,7 +77,10 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
             horizontal: ShunshiSpacing.pagePadding,
             vertical: ShunshiSpacing.lg,
           ),
-          child: Column(
+          // 桌面宽屏下限宽居中，避免移动布局拉满全宽
+          child: MaxWidthContent(
+            maxWidth: kFormContentMaxWidth,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── 顶部导航 ──
@@ -173,6 +177,7 @@ class _SubscriptionPageState extends State<SubscriptionPage> {
 
               const SizedBox(height: ShunshiSpacing.xl),
             ],
+            ),
           ),
         ),
       ),

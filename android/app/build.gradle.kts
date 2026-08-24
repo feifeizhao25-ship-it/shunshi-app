@@ -1,4 +1,3 @@
-import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -50,7 +49,8 @@ android {
         "CM_KEY_PASSWORD",
     ).all { !System.getenv(it).isNullOrBlank() }
     if (keystorePropertiesFile.exists()) {
-        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+        // 以 UTF-8 读取（Properties.load(InputStream) 默认 ISO-8859-1，会损坏中文路径）
+        keystorePropertiesFile.bufferedReader(Charsets.UTF_8).use { keystoreProperties.load(it) }
     } else if (isReleaseBuild && !hasCodemagicSigning && !allowDebugReleaseSigning) {
         throw GradleException(
             "Release keystore is required. Add android/key.properties, configure " +

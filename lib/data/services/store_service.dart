@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:in_app_purchase/in_app_purchase.dart';
+import '../../core/network/network_service.dart';
 
 class StoreService {
   StoreService._();
@@ -9,6 +12,7 @@ class StoreService {
   final InAppPurchase _purchase = InAppPurchase.instance;
   bool _available = false;
   Future<bool>? _initializing;
+  StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
 
   static const Set<String> productIds = {
     'shunshi_yangxin_monthly',
@@ -21,8 +25,27 @@ class StoreService {
   Future<bool> initialize() {
     return _initializing ??= _purchase.isAvailable().then((available) {
       _available = available;
+      if (available) {
+        _purchaseSubscription ??= _purchase.purchaseStream.listen(_handlePurchases);
+      }
       return available;
     });
+  }
+
+  Future<void> _handlePurchases(List<PurchaseDetails> purchases) async {
+    for (final purchase in purchases) {
+      if (purchase.status != PurchaseStatus.purchased && purchase.status != PurchaseStatus.restored) continue;
+      final source = purchase.verificationData.source.toLowerCase();
+      final store = source.contains('google') ? 'google_play' : 'app_store';
+      await NetworkService().client.post('/billing/iap/verify', data: {
+        'product_id': purchase.productID,
+        'receipt': purchase.verificationData.serverVerificationData,
+        'store': store,
+      });
+      if (purchase.pendingCompletePurchase) {
+        await _purchase.completePurchase(purchase);
+      }
+    }
   }
 
   Future<void> restorePurchases() async {

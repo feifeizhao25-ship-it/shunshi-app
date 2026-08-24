@@ -239,7 +239,6 @@ class _DetailSheet extends StatelessWidget {
     final content = item['content'] as String? ?? item['summary'] as String? ?? '';
     final tags = item['tags'] as List? ?? [];
     final season = item['season_tag'] as String? ?? '';
-    final imageUrl = item['image_url'] as String? ?? '';
 
     return ListView(
       controller: scrollController,

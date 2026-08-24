@@ -6,7 +6,6 @@ import '../../../core/theme/shunshi_colors.dart';
 import '../../../core/theme/shunshi_spacing.dart';
 import '../../../core/theme/shunshi_text_styles.dart';
 import '../../../core/theme/shunshi_animations.dart';
-import '../../widgets/components/components.dart';
 
 /// 音频播放器 — 沉浸式设计
 ///
@@ -51,7 +50,6 @@ class _AudioPlayerPageState extends State<AudioPlayerPage>
   String _title = '呼吸引导';
   String _subtitle = '3秒呼吸节奏';
   String _category = 'guided';
-  bool _isPremium = false;
   String? _audioUrl;
 
   // 改用 ApiClient：它带 _AuthInterceptor，会自动附上 Bearer token。
@@ -121,7 +119,6 @@ class _AudioPlayerPageState extends State<AudioPlayerPage>
           _title = widget.title ?? data['title'] ?? _title;
           _subtitle = widget.subtitle ?? data['subtitle'] ?? _subtitle;
           _category = data['type'] ?? _category;
-          _isPremium = data['is_premium'] ?? false;
           _audioUrl = audioUrl;
           _isLoading = false;
         });

@@ -25,16 +25,16 @@ class _SettingsPageState extends State<SettingsPage> {
   // ── 通知设置 ──
   bool _pushEnabled = true;
   final Map<String, bool> _timeSlots = {
-    'morning': true,    // 早上
-    'noon': true,       // 中午
-    'afternoon': true,  // 下午
-    'evening': true,    // 晚上
-    'night': false,     // 夜间
+    'morning': true, // 早上
+    'noon': true, // 中午
+    'afternoon': true, // 下午
+    'evening': true, // 晚上
+    'night': false, // 夜间
   };
   final Map<String, bool> _preferences = {
-    'wellness_tips': true,    // 养生建议
-    'solar_reminder': true,   // 节气提醒
-    'follow_up': false,       // 跟进关怀
+    'wellness_tips': true, // 养生建议
+    'solar_reminder': true, // 节气提醒
+    'follow_up': false, // 跟进关怀
   };
 
   // ── 免打扰 ──
@@ -75,7 +75,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   Future<void> _loadHemisphere() async {
     final prefs = await SharedPreferences.getInstance();
-    if (mounted) setState(() => _hemisphere = prefs.getString('hemisphere') ?? 'north');
+    if (mounted) {
+      setState(() => _hemisphere = prefs.getString('hemisphere') ?? 'north');
+    }
   }
 
   Future<void> _setHemisphere(String value) async {
@@ -102,7 +104,8 @@ class _SettingsPageState extends State<SettingsPage> {
           children: [
             Center(
               child: Container(
-                width: 40, height: 4,
+                width: 40,
+                height: 4,
                 decoration: BoxDecoration(
                   color: _textHint(context).withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2),
@@ -110,11 +113,18 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('选择所在半球', style: ShunshiTextStyles.heading.copyWith(color: _textPrimary(context))),
+            Text(
+              '选择所在半球',
+              style: ShunshiTextStyles.heading.copyWith(
+                color: _textPrimary(context),
+              ),
+            ),
             const SizedBox(height: 8),
             Text(
               '影响首页显示的季节内容',
-              style: ShunshiTextStyles.caption.copyWith(color: _textHint(context)),
+              style: ShunshiTextStyles.caption.copyWith(
+                color: _textHint(context),
+              ),
             ),
             const SizedBox(height: 20),
             _buildHemisphereOption(
@@ -122,7 +132,10 @@ class _SettingsPageState extends State<SettingsPage> {
               label: '北半球',
               desc: '北美、欧洲、亚洲（北部）',
               isSelected: _hemisphere == 'north',
-              onTap: () { Navigator.pop(ctx); _setHemisphere('north'); },
+              onTap: () {
+                Navigator.pop(ctx);
+                _setHemisphere('north');
+              },
             ),
             const SizedBox(height: 12),
             _buildHemisphereOption(
@@ -130,7 +143,10 @@ class _SettingsPageState extends State<SettingsPage> {
               label: '南半球',
               desc: '南美、澳大利亚、非洲（南部）',
               isSelected: _hemisphere == 'south',
-              onTap: () { Navigator.pop(ctx); _setHemisphere('south'); },
+              onTap: () {
+                Navigator.pop(ctx);
+                _setHemisphere('south');
+              },
             ),
             const SizedBox(height: 16),
           ],
@@ -139,7 +155,8 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Widget _buildHemisphereOption(BuildContext context, {
+  Widget _buildHemisphereOption(
+    BuildContext context, {
     required String label,
     required String desc,
     required bool isSelected,
@@ -152,7 +169,9 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? primary.withValues(alpha: 0.08) : Colors.transparent,
+          color: isSelected
+              ? primary.withValues(alpha: 0.08)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected ? primary : Colors.transparent,
@@ -171,9 +190,20 @@ class _SettingsPageState extends State<SettingsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: ShunshiTextStyles.body.copyWith(color: _textPrimary(context), fontWeight: FontWeight.w500)),
+                  Text(
+                    label,
+                    style: ShunshiTextStyles.body.copyWith(
+                      color: _textPrimary(context),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   const SizedBox(height: 2),
-                  Text(desc, style: ShunshiTextStyles.caption.copyWith(color: _textSecondary(context))),
+                  Text(
+                    desc,
+                    style: ShunshiTextStyles.caption.copyWith(
+                      color: _textSecondary(context),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -283,10 +313,7 @@ class _SettingsPageState extends State<SettingsPage> {
     setState(() => _aiMemoryEnabled = value);
     try {
       final client = ApiClient();
-      await client.post(
-        '/api/v1/settings/memory',
-        data: {'enabled': value},
-      );
+      await client.post('/api/v1/settings/memory', data: {'enabled': value});
     } catch (_) {
       if (mounted) setState(() => _aiMemoryEnabled = !value);
     }
@@ -411,9 +438,7 @@ class _SettingsPageState extends State<SettingsPage> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: _surface(ctx),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text(title, style: ShunshiTextStyles.heading),
         content: Text(
           message,
@@ -450,14 +475,17 @@ class _SettingsPageState extends State<SettingsPage> {
   bool _isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
-  Color _bg(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.background : ShunshiColors.background;
+  Color _bg(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.background
+      : ShunshiColors.background;
 
-  Color _textPrimary(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.textPrimary : ShunshiColors.textPrimary;
+  Color _textPrimary(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.textPrimary
+      : ShunshiColors.textPrimary;
 
-  Color _textSecondary(BuildContext context) =>
-      _isDark(context) ? ShunshiDarkColors.textSecondary : ShunshiColors.textSecondary;
+  Color _textSecondary(BuildContext context) => _isDark(context)
+      ? ShunshiDarkColors.textSecondary
+      : ShunshiColors.textSecondary;
 
   Color _textHint(BuildContext context) =>
       _isDark(context) ? ShunshiDarkColors.textHint : ShunshiColors.textHint;
@@ -481,65 +509,69 @@ class _SettingsPageState extends State<SettingsPage> {
         if (!didPop) context.go('/home');
       },
       child: Scaffold(
-      backgroundColor: _bg(context),
-      appBar: AppBar(
         backgroundColor: _bg(context),
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, size: 20, color: _textPrimary(context)),
-          onPressed: () => context.go('/home'),
-        ),
-        title: Text(
-          '设置',
-          style: ShunshiTextStyles.heading.copyWith(
-            fontSize: 18,
-            color: _textPrimary(context),
-          ),
-        ),
-        centerTitle: true,
-      ),
-      body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                color: ShunshiColors.primary,
-                strokeWidth: 2,
-              ),
-            )
-          : AbsorbPointer(
-              absorbing: _isSaving,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: ShunshiSpacing.pagePadding,
-                ),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 8),
-
-                    // ── 1. 通知设置 ──
-                    _buildNotificationSection(context),
-                    const SizedBox(height: 12),
-
-                    // ── 2. 免打扰时间 ──
-                    _buildQuietHoursSection(context),
-                    const SizedBox(height: 12),
-
-                    // ── 3. 隐私设置 ──
-                    _buildPrivacySection(context),
-                    const SizedBox(height: 12),
-
-                    // ── 4. 账户管理 ──
-                    _buildAccountSection(context),
-                    const SizedBox(height: 12),
-
-                    // ── 5. 关于 ──
-                    _buildAboutSection(context),
-                    const SizedBox(height: 32),
-                  ],
-                ),
-              ),
+        appBar: AppBar(
+          backgroundColor: _bg(context),
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: Icon(
+              Icons.arrow_back_ios_new,
+              size: 20,
+              color: _textPrimary(context),
             ),
-    ),
+            onPressed: () => context.go('/home'),
+          ),
+          title: Text(
+            '设置',
+            style: ShunshiTextStyles.heading.copyWith(
+              fontSize: 18,
+              color: _textPrimary(context),
+            ),
+          ),
+          centerTitle: true,
+        ),
+        body: _isLoading
+            ? Center(
+                child: CircularProgressIndicator(
+                  color: ShunshiColors.primary,
+                  strokeWidth: 2,
+                ),
+              )
+            : AbsorbPointer(
+                absorbing: _isSaving,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: ShunshiSpacing.pagePadding,
+                  ),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 8),
+
+                      // ── 1. 通知设置 ──
+                      _buildNotificationSection(context),
+                      const SizedBox(height: 12),
+
+                      // ── 2. 免打扰时间 ──
+                      _buildQuietHoursSection(context),
+                      const SizedBox(height: 12),
+
+                      // ── 3. 隐私设置 ──
+                      _buildPrivacySection(context),
+                      const SizedBox(height: 12),
+
+                      // ── 4. 账户管理 ──
+                      _buildAccountSection(context),
+                      const SizedBox(height: 12),
+
+                      // ── 5. 关于 ──
+                      _buildAboutSection(context),
+                      const SizedBox(height: 32),
+                    ],
+                  ),
+                ),
+              ),
+      ),
     );
   }
 
@@ -669,8 +701,18 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: ShunshiTextStyles.body.copyWith(fontSize: 15, height: 1.3, color: _textPrimary(context))),
-                Text(sublabel, style: ShunshiTextStyles.caption.copyWith(fontSize: 12)),
+                Text(
+                  label,
+                  style: ShunshiTextStyles.body.copyWith(
+                    fontSize: 15,
+                    height: 1.3,
+                    color: _textPrimary(context),
+                  ),
+                ),
+                Text(
+                  sublabel,
+                  style: ShunshiTextStyles.caption.copyWith(fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -699,7 +741,14 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Row(
         children: [
           Expanded(
-            child: Text(label, style: ShunshiTextStyles.body.copyWith(fontSize: 15, height: 1.3, color: _textPrimary(context))),
+            child: Text(
+              label,
+              style: ShunshiTextStyles.body.copyWith(
+                fontSize: 15,
+                height: 1.3,
+                color: _textPrimary(context),
+              ),
+            ),
           ),
           Switch.adaptive(
             value: value,
@@ -743,7 +792,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 context: context,
                 initialTime: _quietStart,
                 builder: (ctx, child) => MediaQuery(
-                  data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: false),
+                  data: MediaQuery.of(
+                    ctx,
+                  ).copyWith(alwaysUse24HourFormat: false),
                   child: child!,
                 ),
               );
@@ -763,7 +814,9 @@ class _SettingsPageState extends State<SettingsPage> {
                 context: context,
                 initialTime: _quietEnd,
                 builder: (ctx, child) => MediaQuery(
-                  data: MediaQuery.of(ctx).copyWith(alwaysUse24HourFormat: false),
+                  data: MediaQuery.of(
+                    ctx,
+                  ).copyWith(alwaysUse24HourFormat: false),
                   child: child!,
                 ),
               );
@@ -892,23 +945,19 @@ class _SettingsPageState extends State<SettingsPage> {
       emoji: 'ℹ️',
       title: '关于',
       children: [
-        _buildInfoTile(
-          context,
-          label: '版本',
-          value: 'v1.0.0',
-        ),
+        _buildInfoTile(context, label: '版本', value: 'v1.0.0'),
         _buildDivider(context),
         _buildActionTile(
           context,
           label: '用户协议',
-          onTap: () {},
+          onTap: () => context.push('/terms'),
           icon: Icons.description_outlined,
         ),
         _buildDivider(context),
         _buildActionTile(
           context,
           label: '隐私政策',
-          onTap: () {},
+          onTap: () => context.push('/privacy'),
           icon: Icons.shield_outlined,
         ),
         _buildDivider(context),
@@ -1054,11 +1103,7 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               const SizedBox(width: 4),
             ],
-            Icon(
-              Icons.chevron_right,
-              color: _textHint(context),
-              size: 20,
-            ),
+            Icon(Icons.chevron_right, color: _textHint(context), size: 20),
           ],
         ),
       ),

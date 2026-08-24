@@ -1,4 +1,4 @@
-/// Prompt 版本管理
+// Prompt 版本管理。
 
 class PromptVersion {
   final String version;

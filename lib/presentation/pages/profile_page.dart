@@ -595,7 +595,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   Switch(
                     value: item.switchValue ?? false,
-                    activeColor: _primary(context),
+                    activeThumbColor: _primary(context),
                     onChanged: item.onSwitchChanged,
                   ),
                 ],

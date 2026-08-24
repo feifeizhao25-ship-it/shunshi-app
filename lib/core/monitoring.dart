@@ -3,11 +3,8 @@ import 'package:flutter/foundation.dart';
 /// 监控服务 - 简化版
 /// 后续可集成 Sentry、Firebase Crashlytics 等
 class MonitoringService {
-  static bool _isInitialized = false;
-
   /// 初始化
   static Future<void> init() async {
-    _isInitialized = true;
     if (kDebugMode) {
       print('[Monitoring] Initialized');
     }

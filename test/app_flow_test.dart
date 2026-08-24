@@ -1,3 +1,6 @@
+// 测试过程需要输出逐步验收结果，便于 CI 日志定位失败步骤。
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shunshi/main.dart';

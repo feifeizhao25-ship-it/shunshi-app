@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "product": "shunshi",
+  "persona": {
+    "id": "E",
+    "archetype": "审慎用户",
+    "matrixRole": "隐私敏感用户",
+    "description": "先看数据用途和推荐依据再决定投入：前两天不选目标只观察，第三天确认可关闭推荐后才选目标，并主动关闭「AI 陪伴」与「家庭关怀」两类推荐。"
+  },
+  "goal": "calm",
+  "goalChosenOnDay": 3,
+  "weekStart": "2026-08-24",
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-08-24",
+      "renderAt": "2026-08-24T08:30:00",
+      "narrative": "首次进入不急着选目标：首页展示目标引导与通用推荐；点开「为什么推荐」了解了数据只存在本地（查看说明不产生行为事件）。",
+      "muteDuringDay": [],
+      "events": []
+    },
+    {
+      "day": 2,
+      "date": "2026-08-25",
+      "renderAt": "2026-08-25T08:30:00",
+      "narrative": "仍不选目标，谨慎试了一次呼吸放松（不登录、不聊天）；首页仍显示目标引导。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "breath", "type": "opened", "at": "2026-08-25T21:00:00" },
+        { "cardId": "breath", "type": "completed", "at": "2026-08-25T21:10:00" }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "2026-08-26",
+      "renderAt": "2026-08-26T08:30:00",
+      "narrative": "确认「可以关闭某类推荐、可以重置画像」后选了目标「放松减压」；当天关闭了「AI 陪伴」类推荐（不想把心事发给 AI）。",
+      "muteDuringDay": ["chat"],
+      "events": [
+        { "cardId": "breath", "type": "completed", "at": "2026-08-26T21:10:00" }
+      ]
+    },
+    {
+      "day": 4,
+      "date": "2026-08-27",
+      "renderAt": "2026-08-27T08:30:00",
+      "narrative": "AI 陪伴卡从首页消失（类别关闭生效）；首页只剩他认可的内容，继续呼吸放松。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "breath", "type": "completed", "at": "2026-08-27T21:10:00" }
+      ]
+    },
+    {
+      "day": 5,
+      "date": "2026-08-28",
+      "renderAt": "2026-08-28T08:30:00",
+      "narrative": "前排稳定为呼吸/节律等放松相关内容；睡前点开今日作息看了一眼。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "breath", "type": "completed", "at": "2026-08-28T21:10:00" },
+        { "cardId": "rhythm", "type": "opened", "at": "2026-08-28T22:00:00" }
+      ]
+    },
+    {
+      "day": 6,
+      "date": "2026-08-29",
+      "renderAt": "2026-08-29T08:30:00",
+      "narrative": "周六又关闭了「家庭关怀」类（一个人住，不需要）；继续呼吸。",
+      "muteDuringDay": ["family"],
+      "events": [
+        { "cardId": "breath", "type": "completed", "at": "2026-08-29T21:10:00" }
+      ]
+    },
+    {
+      "day": 7,
+      "date": "2026-08-30",
+      "renderAt": "2026-08-30T08:30:00",
+      "narrative": "一周结束：完成 7 件行动（呼吸×6、作息×1）；关闭 2 类推荐后焦点候选从 7 张精简到 5 张，前排 4 张（节律/呼吸/运动/节气）全部是他自己留下的内容。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "breath", "type": "completed", "at": "2026-08-30T21:10:00" },
+        { "cardId": "rhythm", "type": "completed", "at": "2026-08-30T22:00:00" }
+      ]
+    }
+  ]
+}

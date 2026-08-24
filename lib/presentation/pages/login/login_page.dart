@@ -10,6 +10,7 @@ import '../../../core/theme/shunshi_spacing.dart';
 import '../../../core/theme/shunshi_text_styles.dart';
 import '../../../data/network/api_client.dart';
 import '../../../data/storage/storage_manager.dart';
+import '../../widgets/responsive_content.dart';
 
 /// 登录方式
 enum _LoginMode { sms, password }
@@ -28,9 +29,16 @@ class _LoginPageState extends State<LoginPage> {
   final _codeController = TextEditingController();
 
   bool _isLoading = false;
+  bool _acceptedLegal = false;
   bool _codeSent = false;
   int _countdown = 0;
   String? _errorMessage;
+
+  bool _ensureLegalConsent() {
+    if (_acceptedLegal) return true;
+    setState(() => _errorMessage = '请先阅读并同意用户协议和隐私政策');
+    return false;
+  }
 
   @override
   void dispose() {
@@ -42,6 +50,7 @@ class _LoginPageState extends State<LoginPage> {
 
   /// 发送验证码
   Future<void> _sendCode() async {
+    if (!_ensureLegalConsent()) return;
     final phone = _phoneController.text.trim();
     if (phone.length < 11) {
       setState(() => _errorMessage = '请输入正确的手机号');
@@ -79,6 +88,7 @@ class _LoginPageState extends State<LoginPage> {
 
   /// 短信验证码登录
   Future<void> _smsLogin() async {
+    if (!_ensureLegalConsent()) return;
     final phone = _phoneController.text.trim();
     final code = _codeController.text.trim();
     if (phone.length < 11 || code.isEmpty) {
@@ -107,6 +117,7 @@ class _LoginPageState extends State<LoginPage> {
 
   /// 密码登录
   Future<void> _passwordLogin() async {
+    if (!_ensureLegalConsent()) return;
     final phone = _phoneController.text.trim();
     final password = _passwordController.text.trim();
     if (phone.isEmpty || password.isEmpty) {
@@ -135,6 +146,7 @@ class _LoginPageState extends State<LoginPage> {
 
   /// 游客登录
   Future<void> _guestLogin() async {
+    if (!_ensureLegalConsent()) return;
     setState(() => _isLoading = true);
     try {
       final client = ApiClient();
@@ -151,6 +163,7 @@ class _LoginPageState extends State<LoginPage> {
 
   /// 微信登录（预留）
   Future<void> _wechatLogin() async {
+    if (!_ensureLegalConsent()) return;
     setState(() => _isLoading = true);
     // TODO: 接入微信SDK
     setState(() => _isLoading = false);
@@ -180,7 +193,10 @@ class _LoginPageState extends State<LoginPage> {
           padding: const EdgeInsets.symmetric(
             horizontal: ShunshiSpacing.pagePadding,
           ),
-          child: Column(
+          // 桌面宽屏下限宽居中，避免移动布局拉满全宽
+          child: MaxWidthContent(
+            maxWidth: kFormContentMaxWidth,
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 60),
@@ -307,6 +323,56 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 24),
 
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: Checkbox(
+                      value: _acceptedLegal,
+                      activeColor: ShunshiColors.primary,
+                      onChanged: _isLoading
+                          ? null
+                          : (value) => setState(() {
+                              _acceptedLegal = value ?? false;
+                              if (_acceptedLegal) _errorMessage = null;
+                            }),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text('我已阅读并同意', style: ShunshiTextStyles.caption),
+                        TextButton(
+                          onPressed: () => context.push('/terms'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            minimumSize: const Size(0, 32),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('《用户协议》'),
+                        ),
+                        Text('和', style: ShunshiTextStyles.caption),
+                        TextButton(
+                          onPressed: () => context.push('/privacy'),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 2),
+                            minimumSize: const Size(0, 32),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('《隐私政策》'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
               // 登录按钮
               SizedBox(
                 width: double.infinity,
@@ -419,6 +485,7 @@ class _LoginPageState extends State<LoginPage> {
 
               const SizedBox(height: 20),
             ],
+            ),
           ),
         ),
       ),

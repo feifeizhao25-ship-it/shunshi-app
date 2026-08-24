@@ -1,7 +1,7 @@
 // lib/core/prompt/task_prompts.dart
 
-/// Task Prompt - 任务特定Prompt
-/// 不同功能使用不同Task Prompt
+// Task Prompt - 任务特定 Prompt
+// 不同功能使用不同 Task Prompt。
 
 class TaskPrompts {
   /// 1. AI聊天

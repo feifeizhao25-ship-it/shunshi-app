@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "product": "shunshi",
+  "persona": {
+    "id": "C",
+    "archetype": "决策者",
+    "matrixRole": "家庭组织者",
+    "description": "上有老下有小，目标是把全家照顾好；每天看一眼「给家人泡什么茶」，顺手安排全家的饮食起居。"
+  },
+  "goal": "family",
+  "goalChosenOnDay": 1,
+  "weekStart": "2026-08-24",
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-08-24",
+      "renderAt": "2026-08-24T08:30:00",
+      "narrative": "选目标「照顾好家人」，家庭关怀卡成为 Hero；「记下了」完成首日行动，午间点开食疗。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "family", "type": "completed", "at": "2026-08-24T08:40:00" },
+        { "cardId": "food", "type": "opened", "at": "2026-08-24T12:00:00" }
+      ]
+    },
+    {
+      "day": 2,
+      "date": "2026-08-25",
+      "renderAt": "2026-08-25T08:30:00",
+      "narrative": "首页按首日行为重排，Hero 透出「昨天你完成了家庭关怀」的承接理由；家庭+食疗进入日常。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "family", "type": "completed", "at": "2026-08-25T08:40:00" },
+        { "cardId": "food", "type": "completed", "at": "2026-08-25T12:20:00" }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "2026-08-26",
+      "renderAt": "2026-08-26T08:30:00",
+      "narrative": "个人基线形成：家庭关怀与食疗稳定占据前排；今天只完成了家庭卡。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "family", "type": "completed", "at": "2026-08-26T08:40:00" }
+      ]
+    },
+    {
+      "day": 4,
+      "date": "2026-08-27",
+      "renderAt": "2026-08-27T18:30:00",
+      "narrative": "忙了一整天没打开 App，傍晚再进首页：进展层出现「今天还没行动」的异常提醒；点开做了 1 分钟呼吸（采纳了异常建议）。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "anomaly_inactive", "type": "opened", "at": "2026-08-27T18:35:00" },
+        { "cardId": "breath", "type": "completed", "at": "2026-08-27T18:40:00" }
+      ]
+    },
+    {
+      "day": 5,
+      "date": "2026-08-28",
+      "renderAt": "2026-08-28T08:30:00",
+      "narrative": "回到正常节奏：家庭+食疗完成；睡前点开今日作息，开始把全家作息也纳入安排（跨模块连接）。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "family", "type": "completed", "at": "2026-08-28T08:40:00" },
+        { "cardId": "food", "type": "completed", "at": "2026-08-28T12:20:00" },
+        { "cardId": "rhythm", "type": "opened", "at": "2026-08-28T21:00:00" }
+      ]
+    },
+    {
+      "day": 6,
+      "date": "2026-08-29",
+      "renderAt": "2026-08-29T08:30:00",
+      "narrative": "周六只完成家庭关怀；点开过的作息卡相关性上调，进入前排视野。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "family", "type": "completed", "at": "2026-08-29T08:40:00" }
+      ]
+    },
+    {
+      "day": 7,
+      "date": "2026-08-30",
+      "renderAt": "2026-08-30T08:30:00",
+      "narrative": "一周结束：7 天全勤，完成 10 件行动（家庭×6、食疗×3、呼吸×1），首页前排稳定为「家庭/食疗」组合。",
+      "muteDuringDay": [],
+      "events": [
+        { "cardId": "family", "type": "completed", "at": "2026-08-30T08:40:00" },
+        { "cardId": "food", "type": "completed", "at": "2026-08-30T12:20:00" }
+      ]
+    }
+  ]
+}

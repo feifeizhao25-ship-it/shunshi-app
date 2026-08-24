@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "product": "shunshi",
+  "persona": {
+    "id": "B",
+    "archetype": "专业者",
+    "matrixRole": "健康/成长教练",
+    "description": "第一天就把所有卡片的专业详情点开评估一遍，确认内容可靠后，进入「运动+食疗」双卡高频执行模式。"
+  },
+  "goal": "energy",
+  "goalChosenOnDay": 1,
+  "weekStart": "2026-08-24",
+  "days": [
+    {
+      "day": 1,
+      "date": "2026-08-24",
+      "renderAt": "2026-08-24T07:00:00",
+      "narrative": "选目标「白天更有精神」后，把六张卡的详情全部点开评估（专业者首日深查证据），完成一次轻运动。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "solar_term",
+          "type": "opened",
+          "at": "2026-08-24T08:35:00"
+        },
+        {
+          "cardId": "rhythm",
+          "type": "opened",
+          "at": "2026-08-24T08:38:00"
+        },
+        {
+          "cardId": "exercise",
+          "type": "opened",
+          "at": "2026-08-24T08:41:00"
+        },
+        {
+          "cardId": "food",
+          "type": "opened",
+          "at": "2026-08-24T08:44:00"
+        },
+        {
+          "cardId": "breath",
+          "type": "opened",
+          "at": "2026-08-24T08:47:00"
+        },
+        {
+          "cardId": "chat",
+          "type": "opened",
+          "at": "2026-08-24T08:50:00"
+        },
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-24T08:58:00"
+        }
+      ]
+    },
+    {
+      "day": 2,
+      "date": "2026-08-25",
+      "renderAt": "2026-08-25T07:00:00",
+      "narrative": "首页按首日行为重排：点开过的卡相关性全部上调；进入「运动+食疗」执行节奏，午间评估了家庭关怀卡。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-25T07:30:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-25T12:30:00"
+        },
+        {
+          "cardId": "family",
+          "type": "opened",
+          "at": "2026-08-25T13:00:00"
+        }
+      ]
+    },
+    {
+      "day": 3,
+      "date": "2026-08-26",
+      "renderAt": "2026-08-26T07:00:00",
+      "narrative": "个人基线形成：前排稳定在运动/食疗/节气，推荐理由透出「你之前点开过」。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-26T07:30:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-26T12:30:00"
+        }
+      ]
+    },
+    {
+      "day": 4,
+      "date": "2026-08-27",
+      "renderAt": "2026-08-27T07:00:00",
+      "narrative": "再次点开节气详情核对依据（专业者复核来源）；完成运动。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-27T07:30:00"
+        },
+        {
+          "cardId": "solar_term",
+          "type": "opened",
+          "at": "2026-08-27T09:00:00"
+        }
+      ]
+    },
+    {
+      "day": 5,
+      "date": "2026-08-28",
+      "renderAt": "2026-08-28T07:00:00",
+      "narrative": "运动+食疗持续；睡前点开呼吸卡，把放松纳入自己的教练工具箱。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-28T07:30:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-28T12:30:00"
+        },
+        {
+          "cardId": "breath",
+          "type": "opened",
+          "at": "2026-08-28T22:00:00"
+        }
+      ]
+    },
+    {
+      "day": 6,
+      "date": "2026-08-29",
+      "renderAt": "2026-08-29T07:00:00",
+      "narrative": "三卡执行日：运动、食疗、呼吸全部完成，一周打开过的工具全部进入日常。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-29T07:30:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-29T12:30:00"
+        },
+        {
+          "cardId": "breath",
+          "type": "completed",
+          "at": "2026-08-29T22:10:00"
+        }
+      ]
+    },
+    {
+      "day": 7,
+      "date": "2026-08-30",
+      "renderAt": "2026-08-30T07:00:00",
+      "narrative": "一周结束：7 天全勤，完成 13 件行动（运动×7、食疗×5、呼吸×1），首页已成「节气/节律/运动」稳定前三的专业工作台。",
+      "muteDuringDay": [],
+      "events": [
+        {
+          "cardId": "exercise",
+          "type": "completed",
+          "at": "2026-08-30T07:30:00"
+        },
+        {
+          "cardId": "food",
+          "type": "completed",
+          "at": "2026-08-30T12:30:00"
+        }
+      ]
+    }
+  ]
+}

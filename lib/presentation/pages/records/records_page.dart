@@ -334,12 +334,15 @@ class _MoodTabState extends State<_MoodTab> {
 
   String _nowLabel() {
     final h = DateTime.now().hour;
-    if (h < 6)
-      return '凌晨${h}:${DateTime.now().minute.toString().padLeft(2, '0')}';
-    if (h < 12)
-      return '上午${h}:${DateTime.now().minute.toString().padLeft(2, '0')}';
-    if (h < 18)
+    if (h < 6) {
+      return '凌晨$h:${DateTime.now().minute.toString().padLeft(2, '0')}';
+    }
+    if (h < 12) {
+      return '上午$h:${DateTime.now().minute.toString().padLeft(2, '0')}';
+    }
+    if (h < 18) {
       return '下午${h - 12}:${DateTime.now().minute.toString().padLeft(2, '0')}';
+    }
     return '晚上${h - 12}:${DateTime.now().minute.toString().padLeft(2, '0')}';
   }
 
@@ -1144,7 +1147,7 @@ class _DietTabState extends State<_DietTab> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '饮食健康度 ${_score}/10',
+          '饮食健康度 $_score/10',
           style: ShunshiTextStyles.caption.copyWith(color: Colors.white),
         ),
         backgroundColor: ShunshiColors.earth,

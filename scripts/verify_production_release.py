@@ -31,6 +31,7 @@ runtime_dart = "\n".join(
     for path in (ROOT / "lib").rglob("*.dart")
 )
 records_page = read("lib/presentation/pages/records/records_page.dart")
+backend = read("backend/app/main.py")
 
 if "SHUNSHI_API_BASE_URL" not in app_config or "kReleaseMode" not in app_config:
     errors.append("release API URL is not fail-closed")
@@ -67,6 +68,9 @@ for fabricated_marker in ("模拟7天", "工作顺利", "和朋友聚餐", "完�
         errors.append(f"health records page contains fabricated user data: {fabricated_marker}")
 if "HealthRecordStorage" not in records_page or "SharedPreferences" in records_page:
     errors.append("health journal is not persisted using encrypted local storage")
+for marker in ("qwen/qwen3-30b-a3b-instruct-2507", "deepseek/deepseek-v3.2", '"data_collection": "deny"', '"zdr": True', "SHUNSHI_LLM_ALLOW_CROSS_BORDER", '"max_tokens": 800', "未返回有效内容", '"ai_metadata": ai_metadata'):
+    if marker not in backend:
+        errors.append(f"OpenRouter privacy/cost routing contract missing: {marker}")
 
 if errors:
     print("ShunShi production release gate: FAIL")

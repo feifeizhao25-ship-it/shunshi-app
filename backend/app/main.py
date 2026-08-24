@@ -23,11 +23,23 @@ ENV = os.getenv("SHUNSHI_ENV", "development")
 DB_PATH = Path(os.getenv("SHUNSHI_DATABASE_PATH", "/data/shunshi.db" if ENV == "production" else "./shunshi.db"))
 JWT_SECRET = os.getenv("SHUNSHI_JWT_SECRET", "")
 CORS = [item.strip() for item in os.getenv("SHUNSHI_CORS_ORIGINS", "").split(",") if item.strip()]
-LLM_BASE = os.getenv("SHUNSHI_OPENAI_BASE_URL", "").rstrip("/")
-LLM_KEY = os.getenv("SHUNSHI_OPENAI_API_KEY", "")
-LLM_MODEL = os.getenv("SHUNSHI_OPENAI_MODEL", "qwen-plus")
+LLM_BASE = os.getenv("SHUNSHI_OPENAI_BASE_URL", os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1" if os.getenv("OPENROUTER_API_KEY") else "")).rstrip("/")
+LLM_KEY = os.getenv("SHUNSHI_OPENAI_API_KEY", os.getenv("OPENROUTER_API_KEY", ""))
+LLM_MODEL = os.getenv("SHUNSHI_OPENAI_MODEL", os.getenv("OPENROUTER_MODEL_FAST", "qwen/qwen3-30b-a3b-instruct-2507"))
+LLM_FALLBACK_MODELS = [item.strip() for item in os.getenv("OPENROUTER_FALLBACK_MODELS", "deepseek/deepseek-v3.2,google/gemini-2.5-flash-lite").split(",") if item.strip()]
+LLM_IS_OPENROUTER = "openrouter.ai" in LLM_BASE
+LLM_ALLOW_CROSS_BORDER = os.getenv("SHUNSHI_LLM_ALLOW_CROSS_BORDER", "false").lower() == "true"
+LLM_CIRCUIT_FAILURES = max(1, int(os.getenv("OPENROUTER_CIRCUIT_FAILURES", "3")))
+LLM_CIRCUIT_COOLDOWN_SECONDS = max(1, int(os.getenv("OPENROUTER_CIRCUIT_COOLDOWN_SECONDS", "60")))
+AI_DAILY_LIMIT_FREE = max(1, int(os.getenv("SHUNSHI_AI_DAILY_LIMIT_FREE", "20")))
+AI_DAILY_LIMIT_MEMBER = max(AI_DAILY_LIMIT_FREE, int(os.getenv("SHUNSHI_AI_DAILY_LIMIT_MEMBER", "200")))
+llm_failures = 0
+llm_open_until = 0.0
 SMS_URL = os.getenv("SHUNSHI_SMS_PROVIDER_URL", "")
 SMS_TOKEN = os.getenv("SHUNSHI_SMS_PROVIDER_TOKEN", "")
+IAP_VERIFY_URL = os.getenv("SHUNSHI_IAP_VERIFY_URL", "")
+IAP_VERIFY_TOKEN = os.getenv("SHUNSHI_IAP_VERIFY_TOKEN", "")
+IAP_PRODUCTS = {"shunshi_yangxin_monthly", "shunshi_healing_monthly", "shunshi_family_monthly"}
 
 if ENV == "production" and (len(JWT_SECRET) < 32 or not CORS):
     raise RuntimeError("生产环境必须配置至少 32 位 JWT 密钥和明确的 CORS 来源")
@@ -60,6 +72,8 @@ def init_db() -> None:
         CREATE TABLE IF NOT EXISTS reflections(id TEXT PRIMARY KEY, user_id TEXT NOT NULL, content TEXT NOT NULL, created_at INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS feedback(id TEXT PRIMARY KEY, user_id TEXT NOT NULL, payload TEXT NOT NULL, created_at INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS entitlements(user_id TEXT PRIMARY KEY, product_id TEXT NOT NULL, store TEXT NOT NULL, expires_at INTEGER NOT NULL, original_transaction_id TEXT UNIQUE NOT NULL, updated_at INTEGER NOT NULL);
+        CREATE TABLE IF NOT EXISTS ai_usage(id TEXT PRIMARY KEY, user_id TEXT NOT NULL, day_key INTEGER NOT NULL, tokens INTEGER NOT NULL DEFAULT 0, cost_usd REAL NOT NULL DEFAULT 0, created_at INTEGER NOT NULL);
+        CREATE INDEX IF NOT EXISTS idx_ai_usage_user_day ON ai_usage(user_id, day_key);
         """)
 
 
@@ -116,6 +130,12 @@ class Chat(BaseModel):
         if not value:
             raise HTTPException(422, "消息内容不能为空")
         return value
+
+
+class IAPReceipt(BaseModel):
+    product_id: str
+    receipt: str = Field(min_length=16, max_length=200000)
+    store: str = Field(pattern=r"^(app_store|google_play)$")
 
 
 def auth_response(user_id: str) -> dict[str, Any]:
@@ -185,28 +205,123 @@ def password_login(body: Login):
     return auth_response(row["id"])
 
 
-async def llm_answer(message: str) -> str:
+async def llm_answer(message: str) -> tuple[str, dict[str, Any]]:
+    global llm_failures, llm_open_until
     if not LLM_BASE or not LLM_KEY:
         if ENV == "production":
             raise HTTPException(503, "智能服务暂不可用")
-        return "我已收到你的记录。你可以先从一件今天能完成的小事开始；如有持续不适，请及时咨询专业医生。"
+        return "我已收到你的记录。你可以先从一件今天能完成的小事开始；如有持续不适，请及时咨询专业医生。", {"provider": "development_fallback", "model": None, "tokens": 0, "cost_usd": 0, "latency_ms": 0}
+    if LLM_IS_OPENROUTER and not LLM_ALLOW_CROSS_BORDER:
+        raise HTTPException(503, "跨境模型未获得明确授权，智能服务已拒绝发送健康数据")
+    if LLM_IS_OPENROUTER and time.monotonic() < llm_open_until:
+        raise HTTPException(503, "智能服务暂时熔断，请稍后重试")
     prompt = "你是顺时健康陪伴助手。只用简明中文，不诊断、不替代医生；涉及危险症状应建议立即就医。回答要可执行、易懂。"
-    async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(f"{LLM_BASE}/chat/completions", headers={"Authorization": f"Bearer {LLM_KEY}"}, json={"model": LLM_MODEL, "messages": [{"role": "system", "content": prompt}, {"role": "user", "content": message}], "temperature": 0.3})
+    payload: dict[str, Any] = {"model": LLM_MODEL, "messages": [{"role": "system", "content": prompt}, {"role": "user", "content": message}], "temperature": 0.3, "max_tokens": 800}
+    if LLM_IS_OPENROUTER:
+        payload.update({"models": [LLM_MODEL, *LLM_FALLBACK_MODELS], "provider": {"data_collection": "deny", "zdr": True, "require_parameters": True}})
+    started_at = time.monotonic()
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.post(f"{LLM_BASE}/chat/completions", headers={"Authorization": f"Bearer {LLM_KEY}", "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "https://shunshi.cn"), "X-Title": "顺时"}, json=payload)
+            response.raise_for_status()
+            data = response.json()
+            content = str(data.get("choices", [{}])[0].get("message", {}).get("content", "")).strip()
+            if not content:
+                raise HTTPException(502, "智能服务未返回有效内容")
+    except Exception:
+        if LLM_IS_OPENROUTER:
+            llm_failures += 1
+            if llm_failures >= LLM_CIRCUIT_FAILURES:
+                llm_open_until = time.monotonic() + LLM_CIRCUIT_COOLDOWN_SECONDS
+        raise
+    if LLM_IS_OPENROUTER:
+        llm_failures = 0
+        llm_open_until = 0.0
+    usage = data.get("usage", {})
+    return content, {"provider": "openrouter" if LLM_IS_OPENROUTER else "openai_compatible", "model": data.get("model", LLM_MODEL), "tokens": int(usage.get("total_tokens", 0) or 0), "cost_usd": float(usage["cost"]) if usage.get("cost") is not None else None, "latency_ms": int((time.monotonic() - started_at) * 1000)}
+
+
+def assert_ai_quota(user_id: str) -> int:
+    """按北京时间自然日校验 AI 权益；有效会员使用会员额度。"""
+    day_key = (int(time.time()) + 8 * 3600) // 86400
+    with db() as conn:
+        member = conn.execute(
+            "SELECT 1 FROM entitlements WHERE user_id=? AND expires_at>? LIMIT 1",
+            (user_id, int(time.time())),
+        ).fetchone()
+        used = conn.execute(
+            "SELECT COUNT(*) AS count FROM ai_usage WHERE user_id=? AND day_key=?",
+            (user_id, day_key),
+        ).fetchone()["count"]
+    limit = AI_DAILY_LIMIT_MEMBER if member else AI_DAILY_LIMIT_FREE
+    if used >= limit:
+        raise HTTPException(429, f"今日智能对话额度已用完（{used}/{limit}）")
+    return day_key
+
+
+def record_ai_usage(user_id: str, day_key: int, metadata: dict[str, Any]) -> None:
+    with db() as conn:
+        conn.execute(
+            "INSERT INTO ai_usage VALUES(?,?,?,?,?,?)",
+            (str(uuid.uuid4()), user_id, day_key, int(metadata.get("tokens", 0) or 0), float(metadata.get("cost_usd", 0) or 0), int(time.time())),
+        )
+
+
+@app.get("/api/v1/ai/usage")
+def ai_usage(user_id: str = Depends(current_user)):
+    day_key = (int(time.time()) + 8 * 3600) // 86400
+    with db() as conn:
+        member = conn.execute("SELECT 1 FROM entitlements WHERE user_id=? AND expires_at>? LIMIT 1", (user_id, int(time.time()))).fetchone()
+        row = conn.execute(
+            "SELECT COUNT(*) AS calls, COALESCE(SUM(tokens),0) AS tokens, COALESCE(SUM(cost_usd),0) AS cost FROM ai_usage WHERE user_id=? AND day_key=?",
+            (user_id, day_key),
+        ).fetchone()
+    limit = AI_DAILY_LIMIT_MEMBER if member else AI_DAILY_LIMIT_FREE
+    used = int(row["calls"])
+    ratio = used / limit
+    warning = "blocked" if ratio >= 1 else "critical" if ratio >= 0.95 else "warning" if ratio >= 0.8 else "normal"
+    return {"used": used, "limit": limit, "remaining": max(limit - used, 0), "usage_ratio": round(ratio, 4), "warning_level": warning, "tokens": int(row["tokens"]), "cost_usd": round(float(row["cost"]), 6), "timezone": "Asia/Shanghai"}
+
+
+@app.post("/api/v1/billing/iap/verify")
+async def verify_iap(body: IAPReceipt, user_id: str = Depends(current_user)):
+    if body.product_id not in IAP_PRODUCTS:
+        raise HTTPException(400, "未知订阅商品")
+    if not IAP_VERIFY_URL or not IAP_VERIFY_TOKEN:
+        raise HTTPException(503, "应用商店凭证验证服务尚未配置")
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(IAP_VERIFY_URL, json=body.model_dump(), headers={"Authorization": f"Bearer {IAP_VERIFY_TOKEN}"})
         response.raise_for_status()
-        return response.json()["choices"][0]["message"]["content"]
+    verified = response.json()
+    if verified.get("valid") is not True or verified.get("product_id") != body.product_id:
+        raise HTTPException(400, "购买凭证验证失败")
+    expires_at = int(verified.get("expires_at", 0) or 0)
+    transaction_id = str(verified.get("original_transaction_id", "")).strip()
+    if expires_at <= time.time() or not transaction_id:
+        raise HTTPException(400, "购买凭证已过期或不完整")
+    with db() as conn:
+        owner = conn.execute("SELECT user_id FROM entitlements WHERE original_transaction_id=?", (transaction_id,)).fetchone()
+        if owner and owner["user_id"] != user_id:
+            raise HTTPException(409, "该购买凭证已绑定其他账号")
+        conn.execute(
+            "INSERT INTO entitlements VALUES(?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET product_id=excluded.product_id,store=excluded.store,expires_at=excluded.expires_at,original_transaction_id=excluded.original_transaction_id,updated_at=excluded.updated_at",
+            (user_id, body.product_id, body.store, expires_at, transaction_id, int(time.time())),
+        )
+    return {"active": True, "product_id": body.product_id, "expires_at": expires_at}
 
 
 @app.post("/api/v1/chat/send")
 @app.post("/api/v1/ai/chat")
 async def chat(body: Chat, user_id: str = Depends(current_user)):
     message = body.text()
-    answer = await llm_answer(message)
+    day_key = assert_ai_quota(user_id)
+    answer, ai_metadata = await llm_answer(message)
+    record_ai_usage(user_id, day_key, ai_metadata)
     now = int(time.time())
     with db() as conn:
         conn.execute("INSERT INTO messages VALUES(?,?,?,?,?)", (str(uuid.uuid4()), user_id, "user", message, now))
         conn.execute("INSERT INTO messages VALUES(?,?,?,?,?)", (str(uuid.uuid4()), user_id, "assistant", answer, now))
-    return {"content": answer, "message": answer, "text": answer, "tone": "gentle", "care_status": "stable", "safety_flag": "none"}
+    return {"content": answer, "message": answer, "text": answer, "tone": "gentle", "care_status": "stable", "safety_flag": "none", "ai_metadata": ai_metadata}
 
 
 @app.get("/api/v1/seasons/home/dashboard")

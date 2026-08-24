@@ -2,14 +2,13 @@
 // 设计理念：呼吸感，大留白，柔和
 
 import 'dart:io';
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:uuid/uuid.dart';
 import '../../core/security/safety_filter.dart';
 import '../../data/services/api_service.dart';
 import '../../data/services/voice_service.dart';
+import '../widgets/chat/crisis_resource_card.dart';
 import 'package:image_picker/image_picker.dart';
 
 /// 聊天页面 - 核心对话界面 (国内版)
@@ -26,6 +25,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   final _messageController = TextEditingController();
   final _scrollController = ScrollController();
   bool _isLoading = false;
+
+  // 本地安全闸门：不依赖后端，危机/急症内容在客户端直接拦截
+  final SafetyFilter _safetyFilter = SafetyFilter();
 
   // 语音输入
   final VoiceService _voiceService = VoiceService();
@@ -113,19 +115,48 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     _voiceService.reset();
     _scrollToBottom();
 
+    // 安全闸门①：用户输入命中危机/急症时，不调用生成接口，
+    // 直接回复求助引导并展示资源卡，阻断继续生成养生建议
+    if (text.isNotEmpty) {
+      final inputCheck = await _safetyFilter.check(text);
+      if (!inputCheck.isSafe) {
+        setState(() {
+          _isLoading = false;
+          _messages.add(
+            _ChatMessage(
+              content: inputCheck.response,
+              isUser: false,
+              time: DateTime.now(),
+              safetyFlag: inputCheck.flag,
+            ),
+          );
+        });
+        _scrollToBottom();
+        return;
+      }
+    }
+
     try {
       final apiService = ApiService();
       final result = await apiService.chat(userId: 'user_001', message: text);
       final data = result['data'] ?? result;
       final aiResponse = data['message'] ?? data['text'] ?? '抱歉，我现在有点累，稍后再试试吧～';
 
+      // 安全闸门②：AI 输出同样过一遍本地检查，命中则用安全兜底文案
+      // 替换并展示资源卡，防止不当内容直接到达用户
+      final outputCheck = await _safetyFilter.check(aiResponse);
+      final safeContent = outputCheck.isSafe
+          ? aiResponse
+          : outputCheck.response;
+
       setState(() {
         _isLoading = false;
         _messages.add(
           _ChatMessage(
-            content: aiResponse,
+            content: safeContent,
             isUser: false,
             time: DateTime.now(),
+            safetyFlag: outputCheck.isSafe ? null : outputCheck.flag,
           ),
         );
       });
@@ -732,6 +763,10 @@ class _MessageBubble extends StatelessWidget {
             children: [
               // 检测建议卡内容
               ..._parseContent(message.content),
+              // 安全闸门命中（危机/急症/敏感）：附求助资源卡
+              if (message.safetyFlag != null &&
+                  SafetyFilter.needsCrisisCard(message.safetyFlag!))
+                const CrisisResourceCard(),
               const SizedBox(height: 4),
               Text(
                 '${message.time.hour}:${message.time.minute.toString().padLeft(2, '0')}',
@@ -948,11 +983,15 @@ class _ChatMessage {
   final DateTime time;
   final List<String>? imagePaths;
 
+  /// 安全闸门命中标记（crisis / medical_emergency / sensitive / medical_blocked）
+  final String? safetyFlag;
+
   _ChatMessage({
     required this.content,
     required this.isUser,
     required this.time,
     this.imagePaths,
+    this.safetyFlag,
   });
 }
 

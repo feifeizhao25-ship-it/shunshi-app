@@ -368,36 +368,6 @@ class SolarTermData {
 
 // ── 季节颜色映射 ──────────────────────────────────────
 
-Color _seasonGradientStart(String season) {
-  switch (season) {
-    case 'spring':
-      return const Color(0xFFB5C7A8); // sage green
-    case 'summer':
-      return const Color(0xFFD4A574); // warm amber
-    case 'autumn':
-      return const Color(0xFFC4B5A0); // earth
-    case 'winter':
-      return const Color(0xFF9BB8C9); // calm blue
-    default:
-      return ShunshiColors.primary;
-  }
-}
-
-Color _seasonGradientEnd(String season) {
-  switch (season) {
-    case 'spring':
-      return const Color(0xFFD8E5D0);
-    case 'summer':
-      return const Color(0xFFE8D0B8);
-    case 'autumn':
-      return const Color(0xFFE0D8CC);
-    case 'winter':
-      return const Color(0xFFC8D8E2);
-    default:
-      return ShunshiColors.background;
-  }
-}
-
 String _seasonLabel(String season) {
   switch (season) {
     case 'spring':

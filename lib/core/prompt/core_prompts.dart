@@ -1,7 +1,7 @@
 // lib/core/prompt/core_prompts.dart
 
-/// Core Prompt - AI 人格核心
-/// 所有任务共享的灵魂Prompt
+// Core Prompt - AI 人格核心
+// 所有任务共享的灵魂 Prompt。
 
 class CorePrompts {
   /// 最新版本 Core Prompt

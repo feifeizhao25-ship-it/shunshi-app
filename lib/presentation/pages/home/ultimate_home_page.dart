@@ -2,6 +2,7 @@
 // Based on Ultimate UI Structure v1.0
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shunshi/design_system/ultimate_ui_components.dart';
 
 class UltimateHomePage extends StatefulWidget {
@@ -26,13 +27,6 @@ class _UltimateHomePageState extends State<UltimateHomePage> {
     '早餐喝点温热的',
     '午后晒10分钟太阳',
     '晚上早点放下手机',
-  ];
-  
-  final List<String> _quickQuestions = [
-    '最近睡不好怎么办',
-    '今天适合吃什么',
-    '有没有适合放松的动作',
-    '我有点累',
   ];
   
   bool _showFollowUp = true;
@@ -137,18 +131,11 @@ class _UltimateHomePageState extends State<UltimateHomePage> {
   }
   
   void _navigateToChat() {
-    // Navigate to chat page
-    print('Navigate to chat');
+    context.go('/chat');
   }
   
   void _navigateToSolarTerm() {
-    // Navigate to solar term page
-    print('Navigate to solar term');
-  }
-  
-  void _onQuickQuestion(String question) {
-    print('Quick question: $question');
-    _navigateToChat();
+    context.go('/seasons');
   }
   
   @override
