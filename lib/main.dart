@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/router/app_router.dart';
+import 'core/config/app_config.dart';
 import 'data/storage/storage_manager.dart';
 import 'data/services/notification_service.dart';
 import 'design_system/theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  AppConfig.validate();
 
   // 并行初始化，不阻塞启动 — 避免主线程等待导致 iOS 系统 watchdog kill
   unawaited(

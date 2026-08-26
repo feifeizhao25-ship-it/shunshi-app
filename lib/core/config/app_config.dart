@@ -15,6 +15,11 @@ class AppConfig {
     'SHUNSHI_API_BASE_URL',
   );
 
+  /// Fail immediately during startup when a release artifact has no API URL.
+  static void validate() {
+    apiBaseUrl;
+  }
+
   static String get apiBaseUrl {
     final override = apiBaseUrlOverride?.trim();
     if (override != null && override.isNotEmpty) return _normalize(override);

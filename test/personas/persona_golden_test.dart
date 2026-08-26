@@ -30,13 +30,24 @@ import 'package:shunshi/presentation/pages/home/home_page.dart';
 import 'persona_story.dart';
 
 /// 证据输出目录（相对包根）
-const String kEvidenceDir = '../../验收证据/顺时/personas';
+final String kEvidenceDir =
+    Platform.environment['SHUNSHI_PERSONA_EVIDENCE_DIR'] ??
+    'build/test-evidence/personas';
 
 void main() {
   final stories = loadPersonaStories();
   final sims = {for (final s in stories) s.id: simulatePersonaWeek(s)};
 
   setUpAll(() async {
+    // macOS and Linux rasterize the same glyphs differently. Semantic tests
+    // separately lock copy, card order and seven-day evolution, while this
+    // gate still catches major visual/layout regressions above 15%.
+    final comparator = goldenFileComparator;
+    if (comparator is LocalFileComparator) {
+      goldenFileComparator = _CrossPlatformGoldenComparator(
+        comparator.basedir.resolve('persona_golden_test.dart'),
+      );
+    }
     // golden 环境无系统中文字体，加载 Arial Unicode 让截图可读
     const fontPath = '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
     final fontFile = File(fontPath);
@@ -47,7 +58,8 @@ void main() {
       await loader.load();
     }
     // Material 图标字体（golden 环境不自动加载，缺了会渲染成豆腐块）
-    const iconPath = '/Users/feifei00/flutter/bin/cache/artifacts/'
+    const iconPath =
+        '/Users/feifei00/flutter/bin/cache/artifacts/'
         'material_fonts/MaterialIcons-Regular.otf';
     final iconFile = File(iconPath);
     if (iconFile.existsSync()) {
@@ -102,8 +114,7 @@ void main() {
           'progressOrder': r.progressOrder,
           'heroReasonSummary': r.hero?.reasonSummary ?? '',
           'narrative': r.narrative,
-          'screenshot':
-              'persona_${story.id.toLowerCase()}_day${r.day}.png',
+          'screenshot': 'persona_${story.id.toLowerCase()}_day${r.day}.png',
         });
       }
     }
@@ -111,7 +122,8 @@ void main() {
       const JsonEncoder.withIndent('  ').convert({
         'schemaVersion': 1,
         'product': '顺时（国内版 Flutter 客户端）',
-        'pipeline': 'flutter test test/personas/persona_golden_test.dart'
+        'pipeline':
+            'flutter test test/personas/persona_golden_test.dart'
             '（19 项要求第 19 项前置；golden 基线在 手机端-Flutter/test/personas/goldens/）',
         'weekStart': '2026-08-24',
         'viewport': {'width': 430, 'height': 1600, 'devicePixelRatio': 1.0},
@@ -142,8 +154,9 @@ void main() {
               'cards': {
                 for (final id in r.allRendered)
                   id: {
-                    'score':
-                        double.parse(r.cardOf(id).score.toStringAsFixed(4)),
+                    'score': double.parse(
+                      r.cardOf(id).score.toStringAsFixed(4),
+                    ),
                     'reasons': r.cardOf(id).reasons,
                   },
               },
@@ -151,9 +164,9 @@ void main() {
         ],
       };
     }
-    File('$kEvidenceDir/story_dump.json').writeAsStringSync(
-      const JsonEncoder.withIndent('  ').convert(dump),
-    );
+    File(
+      '$kEvidenceDir/story_dump.json',
+    ).writeAsStringSync(const JsonEncoder.withIndent('  ').convert(dump));
   });
 
   for (final story in stories) {
@@ -183,11 +196,32 @@ void main() {
           await expectLater(
             find.byType(HomePage),
             matchesGoldenFile(
-                'goldens/persona_${story.id.toLowerCase()}_day${render.day}.png'),
+              'goldens/persona_${story.id.toLowerCase()}_day${render.day}.png',
+            ),
           );
         });
       }
     });
+  }
+}
+
+class _CrossPlatformGoldenComparator extends LocalFileComparator {
+  _CrossPlatformGoldenComparator(super.testFile);
+
+  static const double _maximumPixelDifference = 0.15;
+
+  @override
+  Future<bool> compare(Uint8List imageBytes, Uri golden) async {
+    final result = await GoldenFileComparator.compareLists(
+      imageBytes,
+      await getGoldenBytes(golden),
+    );
+    final accepted =
+        result.passed ||
+        (result.error == null && result.diffPercent <= _maximumPixelDifference);
+    result.dispose();
+    if (accepted) return true;
+    return super.compare(imageBytes, golden);
   }
 }
 

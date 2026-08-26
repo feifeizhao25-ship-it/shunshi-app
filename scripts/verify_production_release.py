@@ -14,6 +14,7 @@ def read(relative: str) -> str:
 
 errors: list[str] = []
 app_config = read("lib/core/config/app_config.dart")
+main_source = read("lib/main.dart")
 android = read("android/app/build.gradle.kts")
 android_settings = read("android/settings.gradle.kts")
 gradle_wrapper = read("android/gradle/wrapper/gradle-wrapper.properties")
@@ -35,6 +36,8 @@ backend = read("backend/app/main.py")
 
 if "SHUNSHI_API_BASE_URL" not in app_config or "kReleaseMode" not in app_config:
     errors.append("release API URL is not fail-closed")
+if "AppConfig.validate();" not in main_source:
+    errors.append("main() does not invoke the fail-closed release configuration guard")
 if 'signingConfigs.getByName("debug")' in android and "ALLOW_DEBUG_RELEASE_SIGNING" not in android:
     errors.append("Android release silently uses the debug signer")
 if "key.properties" not in android:
