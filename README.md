@@ -1,5 +1,9 @@
 # 顺时 ShunShi 开发文档索引
 
+> 正式网页、后端与 Flutter 源码统一维护在
+> [shunshi](https://github.com/feifeizhao25-ship-it/shunshi)。本仓库保留移动端
+> 产品文档和发布索引，不是独立源码副本。最新主仓同步：`614f0631`（2026-08-26）。
+
 ## 完成清单
 
 ### 第一轮：产品总览与架构
@@ -94,19 +98,16 @@ shunshi/
 
 ---
 
-## 下一步行动
+## 发布维护
 
-1. **启动开发**：将文档交给工程代理（Antigravity/Cursor/Claude Code）
-2. **Flutter 开发**：按照 `round1-frontend-structure.md` 创建项目
-3. **后端开发**：按照 `round1-backend-structure.md` 创建项目
-4. **数据库初始化**：执行 `round3-database-sql.md` 建表
-5. **AI 系统**：实现 `round3-ai-router.md` + `round3-skills-system.md`
-6. **测试验证**：按照 `round4-testing-system.md` 建立测试
+1. 网页、后端和 Flutter 代码变更只提交到正式主仓，避免双仓漂移。
+2. 本仓库随正式发布同步文档索引与主仓提交号。
+3. 上线前以主仓 CI、Android APK 与 iOS Archive 工作流为准。
 
 ---
 
 ## 文档维护
 
 - 版本：1.0
-- 更新日期：2026-03-08
+- 更新日期：2026-08-26
 - 维护人：Claw 🦅
