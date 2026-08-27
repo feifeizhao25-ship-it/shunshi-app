@@ -1,8 +1,8 @@
 # 顺时 ShunShi 开发文档索引
 
-> 正式网页、后端与 Flutter 源码统一维护在
-> [shunshi](https://github.com/feifeizhao25-ship-it/shunshi)。本仓库保留移动端
-> 产品文档和发布索引，不是独立源码副本。最新主仓同步：`38a0594`（2026-08-26）。
+> 本仓库维护可独立构建和发布的 Flutter 客户端；网页、后端、Kubernetes
+> 与跨端发布编排维护在 [shunshi](https://github.com/feifeizhao25-ship-it/shunshi)。
+> 最新主仓同步：`05a3dc57`；本客户端生产门禁：`9a166b98`（2026-08-27）。
 
 ## 完成清单
 
