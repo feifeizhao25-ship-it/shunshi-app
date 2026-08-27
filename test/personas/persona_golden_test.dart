@@ -35,19 +35,11 @@ final String kEvidenceDir =
     'build/test-evidence/personas';
 
 void main() {
+  _installCrossPlatformGoldenComparator();
   final stories = loadPersonaStories();
   final sims = {for (final s in stories) s.id: simulatePersonaWeek(s)};
 
   setUpAll(() async {
-    // macOS and Linux rasterize the same glyphs differently. Semantic tests
-    // separately lock copy, card order and seven-day evolution, while this
-    // gate still catches major visual/layout regressions above 15%.
-    final comparator = goldenFileComparator;
-    if (comparator is LocalFileComparator) {
-      goldenFileComparator = _CrossPlatformGoldenComparator(
-        comparator.basedir.resolve('persona_golden_test.dart'),
-      );
-    }
     // golden 环境无系统中文字体，加载 Arial Unicode 让截图可读
     const fontPath = '/System/Library/Fonts/Supplemental/Arial Unicode.ttf';
     final fontFile = File(fontPath);
@@ -202,6 +194,18 @@ void main() {
         });
       }
     });
+  }
+}
+
+void _installCrossPlatformGoldenComparator() {
+  // Install before tests are registered: Flutter may capture the comparator
+  // before setUpAll runs. Semantic tests separately lock copy, card order and
+  // seven-day evolution; this gate catches visual/layout regressions above 15%.
+  final comparator = goldenFileComparator;
+  if (comparator is LocalFileComparator) {
+    goldenFileComparator = _CrossPlatformGoldenComparator(
+      comparator.basedir.resolve('persona_golden_test.dart'),
+    );
   }
 }
 
